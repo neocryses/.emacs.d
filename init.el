@@ -107,6 +107,16 @@
 (when (boundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
 
+;; Suppress some error messages
+(defun supress-error-function (data context caller)
+  "Suppress some of the unnecessary error messages"
+  (when (not (memq (car data) '(beginning-of-line
+                                beginning-of-buffer
+                                end-of-line
+                                end-of-buffer)))
+    (command-error-default-function data context caller)))
+(setq command-error-function 'supress-error-function)
+
 ;; Whether frames should be resized implicitly.
 (setq-default frame-inhibit-implied-resize t)
 
@@ -599,7 +609,7 @@ Lisp function does not specify a special indentation."
   (evil-mode 1)
   (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
 
-  ;;; esc quits
+;;; esc quits
   (defun minibuffer-keyboard-quit ()
     "Abort recursive edit.
 In Delete Selection mode, if the mark is active, just deactivate it;
@@ -638,6 +648,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:keymaps '(global)
    "C-SPC" nil)
 
+  (:keymaps '(evil-ex-completion-map)
+   "C-b" 'backward-char
+   "C-a" 'beginning-of-line
+   "C-e" 'end-of-line
+   "C-k" 'kill-line)
+  
   ;; Exit out of insert state with "jk"
   (:states '(insert)
    "j" (general-key-dispatch 'self-insert-command
