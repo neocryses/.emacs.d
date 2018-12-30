@@ -69,11 +69,6 @@
     (package-install 'use-package))
   (require 'use-package))
 
-;; (use-package doom-themes
-;;   :ensure t
-;;   :init
-;;   (load-theme 'doom-one t))
-
 ;; (use-package leuven-theme
 ;;   :ensure t
 ;;   :config
@@ -112,29 +107,31 @@
 (when (boundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
 
-;; (defun loadwomb (&optional frame)
-;;   (load-theme 'wombat t))
-;; (add-hook 'after-make-frame-functions #'loadwomb)
 ;; Whether frames should be resized implicitly.
 (setq-default frame-inhibit-implied-resize t)
 
+;; Core packages
 (use-package esup
   :ensure t)
+
 (use-package no-littering
   :ensure t
   :config
   (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
+
 (use-package delight :ensure t)
+
 (use-package general
   :ensure t
   :config
   (setq global-leader "SPC"
         major-mode-leader ","))
+
 (use-package which-key
   :ensure t
-  :defer 5
+  :defer t
   :delight which-key-mode
   :commands which-key-mode
   :config
@@ -144,14 +141,16 @@
    :prefix global-leader
    ;; "" '(:ignore t :which-key "global prefix")
    "f" '(:ignore t :which-key "files")))
+
 (use-package hydra
   :ensure t
-  :defer 1
+  :defer t
   :config
   (defhydra hydra-zoom (global-map "<f2>")
     "zoom"
     ("g" text-scale-increase "in")
     ("l" text-scale-decrease "out")))
+
 (use-package cp5022x
   :ensure t
   :demand
@@ -266,6 +265,7 @@
 ;;   (unless (eq major-mode 'minibuffer-inactive-mode)
 ;;     (message "Ran %s" (ad-get-arg 0))))
 
+;; Packages
 (use-package aggressive-indent
   :ensure t
   :delight aggressive-indent-mode
@@ -277,12 +277,14 @@
         '(evil-paste-after
           evil-paste-before
           evil-visual-paste)))
+
 (use-package autorevert
   :ensure t
-  :defer 5
+  :defer t
   :config
   (setq auto-revert-interval 0.5)
   (global-auto-revert-mode 1))
+
 (use-package avy
   :ensure t
   :commands avy-goto-char
@@ -290,6 +292,7 @@
   (:states '(normal visual)
    :prefix global-leader
    "ss" 'avy-goto-char))
+
 (use-package company
   :ensure t
   :delight company-mode
@@ -301,6 +304,164 @@
    [backtab] 'company-select-previous
    "C-n" 'company-select-next
    "C-p" 'company-select-previous))
+
+(use-package diff
+  :ensure nil
+  :defer t)
+
+(use-package dired
+  :ensure nil
+  :defer t
+  :commands dired
+  :general
+  (:keymaps '(dired-mode-map)
+   :states '(normal)
+   "q" 'quit-window
+   "j" 'dired-next-line
+   "k" 'dired-previous-line
+   [mouse-2] 'dired-mouse-find-file-other-window
+   [follow-link] 'mouse-face
+   "#" 'dired-flag-auto-save-files
+   "." 'dired-clean-directory
+   "~" 'dired-flag-backup-files
+   "A" 'dired-do-find-regexp
+   "C" 'dired-async-do-copy
+   "B" 'dired-do-byte-compile
+   "D" 'dired-do-delete
+   "gG" 'dired-do-chgrp
+   "H" 'dired-async-do-hardlink
+   "L" 'dired-do-load
+   "M" 'dired-do-chmod
+   "O" 'dired-do-chown
+   "R" 'dired-async-do-rename
+   "S" 'dired-async-do-symlink
+   "T" 'dired-do-touch
+   "X" 'dired-do-shell-command
+   "Z" 'dired-do-compress
+   "c" 'dired-do-compress-to
+   "!" 'dired-do-shell-command
+   "&" 'dired-do-async-shell-command
+   "=" 'dired-diff
+   ;; Tree Dired commands
+   (kbd "M-C-?") 'dired-unmark-all-files
+   (kbd "M-C-d") 'dired-tree-down
+   (kbd "M-C-u") 'dired-tree-up
+   (kbd "M-C-n") 'dired-next-subdir
+   (kbd "M-C-p") 'dired-prev-subdir
+   ;; move to marked files
+   (kbd "M-{") 'dired-prev-marked-file
+   (kbd "M-}") 'dired-next-marked-file
+   ;; Make all regexp commands share a `%' prefix:
+   ;; We used to get to the submap via a symbol dired-regexp-prefix,
+   ;; but that seems to serve little purpose, and copy-keymap
+   ;; does a better job without it.
+   "%" nil
+   "%u" 'dired-upcase
+   "%l" 'dired-downcase
+   "%d" 'dired-flag-files-regexp
+   "%g" 'dired-mark-files-containing-regexp
+   "%m" 'dired-mark-files-regexp
+   "%r" 'dired-do-rename-regexp
+   "%C" 'dired-do-copy-regexp
+   "%H" 'dired-do-hardlink-regexp
+   "%R" 'dired-do-rename-regexp
+   "%S" 'dired-do-symlink-regexp
+   "%&" 'dired-flag-garbage-files
+   ;; mark
+   "*" nil
+   "**" 'dired-mark-executables
+   "*/" 'dired-mark-directories
+   "*@" 'dired-mark-symlinks
+   "*%" 'dired-mark-files-regexp
+   "*(" 'dired-mark-sexp
+   "*." 'dired-mark-extension
+   "*O" 'dired-mark-omitted
+   "*c" 'dired-change-marks
+   "*s" 'dired-mark-subdir-files
+   "*m" 'dired-mark
+   "*u" 'dired-unmark
+   "*?" 'dired-unmark-all-files
+   "*!" 'dired-unmark-all-marks
+   "U" 'dired-unmark-all-marks
+   (kbd "* <delete>") 'dired-unmark-backward
+   (kbd "* C-n") 'dired-next-marked-file
+   (kbd "* C-p") 'dired-prev-marked-file
+   "*t" 'dired-toggle-marks
+   ;; Lower keys for commands not operating on all the marked files
+   "a" 'dired-find-alternate-file
+   "d" 'dired-flag-file-deletion
+   "gf" 'dired-find-file
+   (kbd "C-m") 'dired-find-file
+   "gr" 'revert-buffer
+   "i" 'dired-toggle-read-only
+   "I" 'dired-maybe-insert-subdir
+   "J" 'dired-goto-file
+   "K" 'dired-do-kill-lines
+   "r" 'dired-do-redisplay
+   "m" 'dired-mark
+   "t" 'dired-toggle-marks
+   "u" 'dired-unmark                   ; also "*u"
+   "W" 'browse-url-of-dired-file
+   "x" 'dired-do-flagged-delete
+   "gy" 'dired-show-file-type ;; FIXME: This could probably go on a better key.
+   "Y" 'dired-copy-filename-as-kill
+   "+" 'dired-create-directory
+   ;; open
+   (kbd "<return>") 'dired-find-file
+   (kbd "S-<return>") 'dired-find-file-other-window
+   (kbd "M-<return>") 'dired-display-file
+   "gO" 'dired-find-file-other-window
+   "go" 'dired-view-file
+   ;; sort
+   "o" 'dired-sort-toggle-or-edit
+   ;; moving
+   "gj" 'dired-next-dirline
+   "gk" 'dired-prev-dirline
+   "[" 'dired-prev-dirline
+   "]" 'dired-next-dirline
+   "<" 'dired-prev-dirline
+   ">" 'dired-next-dirline
+   "^" 'dired-up-directory
+   " " 'dired-next-line
+   [?\S-\ ] 'dired-previous-line
+   [remap next-line] 'dired-next-line
+   [remap previous-line] 'dired-previous-line
+   ;; hiding
+   "g$" 'dired-hide-subdir ;; FIXME: This can probably live on a better binding.
+   (kbd "M-$") 'dired-hide-all
+   "(" 'dired-hide-details-mode
+   ;; isearch
+   (kbd "M-s a C-s")   'dired-do-isearch
+   (kbd "M-s a M-C-s") 'dired-do-isearch-regexp
+   (kbd "M-s f C-s")   'dired-isearch-filenames
+   (kbd "M-s f M-C-s") 'dired-isearch-filenames-regexp
+   ;; misc
+   [remap read-only-mode] 'dired-toggle-read-only
+   ;; `toggle-read-only' is an obsolete alias for `read-only-mode'
+   [remap toggle-read-only] 'dired-toggle-read-only
+   "g?" 'dired-summary
+   (kbd "<delete>") 'dired-unmark-backward
+   [remap undo] 'dired-undo
+   [remap advertised-undo] 'dired-undo
+   ;; thumbnail manipulation (image-dired)
+   (kbd "C-t d") 'image-dired-display-thumbs
+   (kbd "C-t t") 'image-dired-tag-files
+   (kbd "C-t r") 'image-dired-delete-tag
+   (kbd "C-t j") 'image-dired-jump-thumbnail-buffer
+   (kbd "C-t i") 'image-dired-dired-display-image
+   (kbd "C-t x") 'image-dired-dired-display-external
+   (kbd "C-t a") 'image-dired-display-thumbs-append
+   (kbd "C-t .") 'image-dired-display-thumb
+   (kbd "C-t c") 'image-dired-dired-comment-files
+   (kbd "C-t f") 'image-dired-mark-tagged-files
+   (kbd "C-t C-t") 'image-dired-dired-toggle-marked-thumbs
+   (kbd "C-t e") 'image-dired-dired-edit-comment-and-tags
+   ;; encryption and decryption (epa-dired)
+   ";d" 'epa-dired-do-decrypt
+   ";v" 'epa-dired-do-verify
+   ";s" 'epa-dired-do-sign
+   ";e" 'epa-dired-do-encrypt))
+
 (use-package display-line-numbers
   :ensure nil
   :unless (version< emacs-version "26.0")
@@ -313,17 +474,21 @@
   ;; (add-hook 'org-mode-hook
   ;;           (lambda () (setq display-line-numbers 'visual)))
   )
+
 (use-package ediff
   :ensure nil
-  :defer 5
+  :defer t
   :config
   (setq ediff-window-setup-function 'ediff-setup-windows-plain))
+
 (use-package elec-pair
   :ensure nil
   :hook (prog-mode . electric-pair-mode))
+
 (use-package eldoc
   :ensure nil
   :delight eldoc-mode)
+
 (use-package elisp-mode
   :ensure nil
   :config
@@ -406,6 +571,7 @@ Lisp function does not specify a special indentation."
   ;; Fix emacs-lisp indentation on keywords
   (add-hook 'emacs-lisp-mode-hook
             (lambda () (setq-local lisp-indent-function #'emacs-lisp-indent-function))))
+
 (use-package evil
   :ensure t
   :demand
@@ -466,42 +632,52 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal visual)
    :prefix global-leader
    "tn" 'evil-ex-nohighlight))
+
 (use-package evil-anzu
   :ensure t
-  :defer 5)
+  :defer t)
+
 (use-package evil-commentary
   :ensure t
   :delight evil-commentary-mode
   :hook (prog-mode . evil-commentary-mode))
+
 (use-package evil-ediff
   :ensure t
   :after ediff
-  :hook (ediff-mode . evil-ediff-init)
-  :defer 10)
+  :defer t
+  :hook (ediff-mode . evil-ediff-init))
+
 (use-package evil-indent-plus
   :ensure t
   :config
   (evil-indent-plus-default-bindings))
+
 (use-package evil-surround
   :ensure t
-  :defer 5
+  :defer t
   :config
   (global-evil-surround-mode 1)
   :general
   (:states '(visual)
    "s" 'evil-surround-region))
+
 (use-package evil-textobj-entire
   :ensure t)
+
 (use-package evil-textobj-line
   :ensure t)
+
 (use-package evil-visualstar
   :ensure t
-  :defer 5
+  :defer t
   :config
   (global-evil-visualstar-mode))
+
 (use-package evil-magit
   :ensure t
   :after magit)
+
 (use-package evil-org
   :ensure t
   :after org
@@ -512,6 +688,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq evil-org-special-o/O '(table-row item))
   ;; (setf evil-org-key-theme '(textobjects insert navigation additional shift todo heading))
   (setf evil-org-key-theme '(navigation calendar additional shift return)))
+
 (use-package ffap
   :ensure nil
   :defer t
@@ -526,13 +703,15 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (defun disable-fylcheck-in-org-src-block ()
     (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
   (add-hook 'org-src-mode-hook #'disable-fylcheck-in-org-src-block))
+
 (use-package flyspell
   :ensure t
   :defer t
   :commands (flyspell-mode flyspell-buffer))
+
 (use-package helm
   :ensure t
-  :defer 1
+  :defer t
   :delight helm-mode
   :init
   (setq helm-mode-fuzzy-match t)
@@ -602,6 +781,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :keymaps '(org-mode-map)
    :prefix major-mode-leader
    "/" 'helm-org-in-buffer-headings))
+
 (use-package helm-files
   :ensure nil
   :defer t
@@ -612,6 +792,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "C-h" 'helm-find-files-up-one-level
    "C-l" 'helm-execute-persistent-action
    "C-r" 'evil-paste-from-register))
+
 (use-package helm-projectile
   :ensure t
   :defer t
@@ -620,6 +801,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :prefix global-leader
    "pp" 'helm-projectile-switch-project
    "pf" 'helm-projectile-find-file))
+
 (use-package helm-swoop
   :ensure t
   :after helm
@@ -627,6 +809,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal)
    :prefix global-leader
    "/" 'helm-swoop))
+
 (use-package helm-org-rifle
   :ensure t
   :after '(helm org)
@@ -634,6 +817,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal)
    :prefix global-leader
    "or" 'helm-org-rifle))
+
 (use-package htmlfontify
   :ensure t
   :defer t
@@ -642,12 +826,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq hfy-meta-tags
         (format "<meta name=\"generator\" content=\"emacs %s; htmlfontify %0.2f\" charset=\"utf-8\" />"
                 emacs-version htmlfontify-version)))
+
 (use-package htmlize
   :ensure t
   :defer t)
+
 (use-package ispell
   :ensure t
-  :defer 10)
+  :defer t)
 
 ;; (use-package leuven-theme
 ;;   :ensure t
@@ -666,23 +852,29 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :hook (emacs-lisp-mode . lispy-mode)
   :config
   (lispy-set-key-theme '(paredit c-digits)))
+
 (use-package lispyville
   :ensure t
   :delight lispyville-mode
   :hook (lispy-mode . lispyville-mode))
+
 (use-package magit
   :ensure t
   :general
   (:states '(normal)
    :prefix global-leader
    "gs" 'magit-status))
+
 (use-package markdown-mode
   :ensure t
   :mode (("\\`README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode)))
+
 (use-package navi-mode
-  :ensure t)
+  :ensure t
+  :defer t)
+
 (use-package neotree
   :ensure t
   :config
@@ -691,6 +883,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal)
    :prefix global-leader
    "tt" 'neotree-toggle))
+
 (use-package nlinum-relative
   :ensure t
   :when (version< emacs-version "26.0")
@@ -698,17 +891,20 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
          (nlinum-relative-mode . nlinum-relative-setup-evil))
   :config
   (setq nlinum-relative-redisplay-delay 0.0))
+
 (use-package nlinum-hl
   :ensure t
   :when (version< emacs-version "26.0")
   :after nlinum)
+
 (use-package ob-sql-mode
   :ensure t
   :defer t
   :after org)
+
 (use-package openwith
   :ensure t
-  :defer 1
+  :defer t
   :config
   (setq openwith-associations
         (list
@@ -726,9 +922,10 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
                '(file))
          ))
   (openwith-mode 1))
+
 (use-package org
   :ensure org-plus-contrib
-  :defer 1
+  :defer t
   :preface
   ;; (unless (file-expand-wildcards (concat package-user-dir "/org-[0-9]*"))
   ;;   (package-install (elt (cdr (assoc 'org package-archive-contents)) 0)))
@@ -771,27 +968,35 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "vo" 'org-overview
    "vc" 'org-content
    "va" 'outline-show-all))
+
 (use-package origami
   :ensure t
   :commands origami-mode
   :hook (prog-mode . origami-mode))
+
 (use-package outorg
   :ensure t
+  :defer t
+  :after org
   :init
   (defvar outline-minor-mode-prefix "\M-#"))
+
 (use-package outshine
   :ensure t
   :hook (outline-minor-mode . outshine-hook-function))
+
 (use-package ox-md
   :ensure nil
   :defer t
   :after org)
+
 (use-package paren
   :ensure nil
   :hook (prog-mode . show-paren-mode))
+
 (use-package projectile
   :ensure t
-  :defer 5
+  :defer t
   :delight projectile-mode
   :config
   (when (eq system-type 'windows-nt)
@@ -806,20 +1011,23 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq projectile-indexing-method 'alien)
   (setq projectile-generic-command "fd . -0")
   (setq projectile-svn-command 'projectile-generic-command))
+
 (use-package rainbow-mode
   :ensure t
   :delight rainbow-mode
-  :defer 5
+  :defer t
   :config
   (rainbow-mode 1))
+
 (use-package rainbow-delimiters
   :ensure t
   :hook (prog-mode . rainbow-delimiters-mode)
   :config)
+
 (use-package ranger
   :ensure t
   :disabled
-  :defer 1
+  :defer t
   :config
   (ranger-override-dired-mode t)
   (setq ranger-cleanup-eagerly t)
@@ -830,6 +1038,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :prefix global-leader
    "ar" 'ranger
    "ad" 'deer))
+
 (use-package recentf
   :ensure nil
   :after no-littering
@@ -837,12 +1046,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq recentf-max-menu-items 100)
   (add-to-list 'recentf-exclude no-littering-var-directory)
   (add-to-list 'recentf-exclude no-littering-etc-directory))
+
 (use-package rg
   :ensure t
   :commands (rg))
+
 (use-package shackle
   :ensure t
-  :defer 1
+  :defer t
   :config
   (setq shackle-default-alignment 'below
         shackle-default-size 8
@@ -854,14 +1065,17 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
                         ("*Help*" :size 0.4)
                         (apropos-mode :size 0.3)))
   (shackle-mode 1))
+
 (use-package simple
   :ensure nil
   :defer t
   :config
   (column-number-mode 1))
+
 (use-package sql-indent
   :ensure t
-  :defer 10)
+  :defer t)
+
 (use-package terminal-here
   :ensure t
   :config
@@ -883,13 +1097,16 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal)
    :prefix global-leader
    "at" 'terminal-here-launch))
+
 (use-package text-mode
   :ensure nil
   :init
   (setq-default major-mode 'text-mode))
+
 (use-package tramp
   :ensure t
   :defer t)
+
 (use-package treemacs
   :ensure t
   :disabled
@@ -899,24 +1116,34 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal)
    :prefix global-leader
    "tn" 'treemacs-toggle))
+
 (use-package undo-tree
   :ensure t
   :delight undo-tree-mode
-  :defer 5
+  :defer t
   :config
   (setq undo-tree-auto-save-history t)
   :general
   (:states '(normal)
    :prefix global-leader
    "tu" 'undo-tree-visualize))
+
+(use-package vbnet-mode
+  :ensure nil
+  :mode "\\.vb\\'")
+
+(use-package vdiff
+  :ensure t
+  :defer t
+  :config
+  (setq vdiff-auto-refine t))
+
 (use-package vlf
   :ensure t
   :demand
   :config
   (require 'vlf-setup))
-(use-package vbnet-mode
-  :ensure nil
-  :mode "\\.vb\\'")
+
 (use-package web-mode
   :ensure t
   :mode (("\\.html\\'" . web-mode)
