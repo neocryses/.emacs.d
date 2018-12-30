@@ -131,7 +131,7 @@
 
 (use-package which-key
   :ensure t
-  :defer t
+  :defer 1
   :delight which-key-mode
   :commands which-key-mode
   :config
@@ -400,7 +400,7 @@
    "r" 'dired-do-redisplay
    "m" 'dired-mark
    "t" 'dired-toggle-marks
-   "u" 'dired-unmark                   ; also "*u"
+   "u" 'dired-unmark                    ; also "*u"
    "W" 'browse-url-of-dired-file
    "x" 'dired-do-flagged-delete
    "gy" 'dired-show-file-type ;; FIXME: This could probably go on a better key.
@@ -461,6 +461,21 @@
    ";v" 'epa-dired-do-verify
    ";s" 'epa-dired-do-sign
    ";e" 'epa-dired-do-encrypt))
+
+(use-package dired-single
+  :ensure t
+  :after dired
+  :general
+  (:keymaps '(dired-mode-map)
+   :states '(normal)
+   [return] 'dired-single-buffer
+   [mouse-1] 'dired-single-buffer-mouse
+   "^" 'dired-single-up-directory))
+
+(use-package dired-x
+  :ensure nil
+  :defer t
+  :after dired)
 
 (use-package display-line-numbers
   :ensure nil
@@ -782,10 +797,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :prefix major-mode-leader
    "/" 'helm-org-in-buffer-headings))
 
+(use-package helm-descbinds
+  :ensure t
+  :defer t
+  :commands helm-descbinds)
+
 (use-package helm-files
   :ensure nil
   :defer t
-  :config
   :general
   (:keymaps '(helm-find-files-map helm-read-file-map)
    "TAB" 'helm-execute-persistent-action
@@ -1127,10 +1146,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal)
    :prefix global-leader
    "tu" 'undo-tree-visualize))
-
-(use-package vbnet-mode
-  :ensure nil
-  :mode "\\.vb\\'")
 
 (use-package vdiff
   :ensure t
