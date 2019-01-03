@@ -108,14 +108,14 @@
   (scroll-bar-mode -1))
 
 ;; Suppress some error messages
-(defun supress-error-function (data context caller)
+(defun supress-error (data context signal)
   "Suppress some of the unnecessary error messages"
   (when (not (memq (car data) '(beginning-of-line
                                 beginning-of-buffer
                                 end-of-line
                                 end-of-buffer)))
-    (command-error-default-function data context caller)))
-(setq command-error-function 'supress-error-function)
+    (command-error-default-function data context signal)))
+(setq command-error-function 'supress-error)
 
 ;; Whether frames should be resized implicitly.
 (setq-default frame-inhibit-implied-resize t)
@@ -287,6 +287,10 @@
         '(evil-paste-after
           evil-paste-before
           evil-visual-paste)))
+
+(use-package anzu
+  :ensure t
+  :defer t)
 
 (use-package autorevert
   :ensure t
@@ -619,6 +623,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
         (setq deactivate-mark  t)
       (when (get-buffer "*Completions*") (delete-windows-on "*Completions*"))
       (abort-recursive-edit)))
+
+  (defun supress-message (orig-fun &rest args)
+    "Fix the handling of the coding for external commands"
+    (let ((inhibit-message t))
+      (apply orig-fun args)))
+  (advice-add 'push-mark :around #'supress-message)
 
   ;; (defhydra hydra-search (:post (evil-ex-nohighlight))
   ;;   "search"
@@ -1035,12 +1045,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :delight projectile-mode
   :config
   (when (eq system-type 'windows-nt)
-    (defun windows-command-coding (projectile-files-via-ext-command &rest arguments)
+    (defun windows-command-coding (orig-fun &rest args)
       "Fix the handling of the coding for external commands"
       (let ((coding-system-for-read 'utf-8)
             (coding-system-for-write 'utf-8))
-        (apply projectile-files-via-ext-command arguments)))
-    (advice-add #'projectile-files-via-ext-command :around #'windows-command-coding))
+        (apply orig-fun args)))
+    (advice-add 'projectile-files-via-ext-command :around #'windows-command-coding))
   (projectile-global-mode)
   (setq projectile-enable-caching t)
   (setq projectile-indexing-method 'alien)
