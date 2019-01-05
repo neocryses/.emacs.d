@@ -1,10 +1,6 @@
 ;; init.el --- Emacs configuration file -*- lexical-binding: t -*-
 
-;;; Commentary:
-
-;; This is a personal configuration file for Emacs.
-
-;;; Code:
+;;; Core configuration
 
 ;; Avoid unwanted package-initialize
 (setq package--init-file-ensured t)
@@ -69,11 +65,6 @@
     (package-install 'use-package))
   (require 'use-package))
 
-;; (use-package leuven-theme
-;;   :ensure t
-;;   :config
-;;   (load-theme 'leuven t))
-
 ;; (defvar lawlist-redisplay-unhighlight-region-function
 ;;   (lambda (rol) (when (overlayp rol) (delete-overlay rol))))
 
@@ -91,6 +82,8 @@
 ;;                         (eq (overlay-end rol) end))
 ;;              (move-overlay rol start end (current-buffer)))
 ;;            rol)))
+
+;;; Core packages
 
 (use-package benchmark-init
   :ensure t
@@ -113,7 +106,8 @@
   (when (not (memq (car data) '(beginning-of-line
                                 beginning-of-buffer
                                 end-of-line
-                                end-of-buffer)))
+                                end-of-buffer
+                                text-read-only)))
     (command-error-default-function data context signal)))
 (setq command-error-function 'supress-error)
 
@@ -176,6 +170,11 @@
   (set-charset-priority 'ascii 'japanese-jisx0208 'latin-jisx0201
                         'katakana-jisx0201 'iso-8859-1 'unicode)
   (set-coding-system-priority 'utf-8 'euc-jp 'iso-2022-jp 'cp932))
+
+(use-package paradox
+  :ensure t
+  :config
+  (paradox-enable))
 
 ;; Allow for location specific settings
 (defvar home-computer '("Shos-MacBook.local")
@@ -275,7 +274,8 @@
 ;;   (unless (eq major-mode 'minibuffer-inactive-mode)
 ;;     (message "Ran %s" (ad-get-arg 0))))
 
-;; Packages
+;;; Packages
+
 (use-package aggressive-indent
   :ensure t
   :delight aggressive-indent-mode
@@ -613,7 +613,7 @@ Lisp function does not specify a special indentation."
   (evil-mode 1)
   (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
 
-;;; esc quits
+  ;; esc quits
   (defun minibuffer-keyboard-quit ()
     "Abort recursive edit.
 In Delete Selection mode, if the mark is active, just deactivate it;
@@ -730,6 +730,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   ;; (setf evil-org-key-theme '(textobjects insert navigation additional shift todo heading))
   (setf evil-org-key-theme '(navigation calendar additional shift return)))
 
+(use-package exec-path-from-shell
+  :ensure t
+  :defer 1
+  :config
+  (exec-path-from-shell-initialize))
+
 (use-package ffap
   :ensure nil
   :defer t
@@ -739,6 +745,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package flycheck
   :ensure t
+  :disabled
   :hook (prog-mode . flycheck-mode)
   :config
   (defun disable-fylcheck-in-org-src-block ()
@@ -823,6 +830,22 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :prefix major-mode-leader
    "/" 'helm-org-in-buffer-headings))
 
+(use-package helm-ag
+  :ensure t
+  :defer t
+  :commands (helm-ag
+             helm-ag-this-file
+             helm-do-ag
+             helm-do-ag-this-file
+             helm-ag-project-root
+             helm-do-ag-project-root
+             helm-ag-buffers
+             helm-do-ag-buffers
+             helm-ag-pop-stack
+             helm-ag-clear-stack)
+  :config
+  (setq helm-ag-base-command "rg --no-heading"))
+
 (use-package helm-descbinds
   :ensure t
   :defer t
@@ -837,6 +860,10 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "C-h" 'helm-find-files-up-one-level
    "C-l" 'helm-execute-persistent-action
    "C-r" 'evil-paste-from-register))
+
+(use-package helm-navi
+  :ensure t
+  :commands helm-navi)
 
 (use-package helm-projectile
   :ensure t
@@ -885,11 +912,10 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 ;;   :config
 ;;   (load-theme 'leuven t))
 
-;; (use-package doom-themes
-;;   :ensure t
-;;   :init
-;;   (load-theme 'doom-one t))
-
+(use-package doom-themes
+  :ensure t
+  :init
+  (load-theme 'doom-one t))
 
 (use-package lispy
   :ensure t
@@ -1019,16 +1045,19 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :commands origami-mode
   :hook (prog-mode . origami-mode))
 
-(use-package outorg
-  :ensure t
-  :defer t
-  :after org
-  :init
-  (defvar outline-minor-mode-prefix "\M-#"))
+;; (use-package outorg
+;;   :ensure t
+;;   :defer t
+;;   :after org
+;;   :init
+;;   (defvar outline-minor-mode-prefix "\M-#"))
 
 (use-package outshine
   :ensure t
-  :hook (outline-minor-mode . outshine-hook-function))
+  :defer t
+  :commands outshine-mode
+  :config
+  (setq outshine-fontify nil))
 
 (use-package ox-md
   :ensure nil
@@ -1200,5 +1229,3 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq-default web-mode-markup-indent-offset tab-width
                 web-mode-css-indent-offset tab-width
                 web-mode-code-indent-offset tab-width))
-
-;;; init.el ends here
