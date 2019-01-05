@@ -173,6 +173,7 @@
 
 (use-package paradox
   :ensure t
+  :defer 1
   :config
   (paradox-enable))
 
@@ -1042,6 +1043,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package origami
   :ensure t
+  :disabled
   :commands origami-mode
   :hook (prog-mode . origami-mode))
 
