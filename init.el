@@ -2,13 +2,14 @@
 
 ;;; Core configuration
 
-;; Avoid unwanted package-initialize
+;;;; Avoid unwanted package-initialize
 (setq package--init-file-ensured t)
+
+;;;; Startup optimization
 
 ;; Remember the original value file name handler
 (defvar prev-file-name-handler-alist file-name-handler-alist)
 
-;; Startup optimization
 (setq file-name-handler-alist nil
       gc-cons-threshold 402653184
       gc-cons-percentage 0.6)
@@ -29,23 +30,50 @@
 ;;   (with-eval-after-load 'gnutls
 ;;     (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem")))
 
-;; Load all .el files in a given directory
+;; Whether frames should be resized implicitly.
+(setq-default frame-inhibit-implied-resize t)
+
+;; Set the font for macOS
+(when (eq system-type 'darwin)
+  (add-to-list 'default-frame-alist '(font . "Ricty Discord-12"))
+  (setq mac-option-modifier 'meta
+        mac-command-modifier 'super))
+
+;; Set the font for Windows
+(when (eq system-type 'windows-nt)
+  (set-face-attribute 'default nil :font "Myrica M-10")
+  (set-frame-font "Myrica M-10" nil t)) 
+
+;;;; Suppress some error messages
+(defun supress-error (data context signal)
+  "Suppress some of the unnecessary error messages"
+  (when (not (memq (car data) '(beginning-of-line
+                                beginning-of-buffer
+                                end-of-line
+                                end-of-buffer
+                                text-read-only)))
+    (command-error-default-function data context signal)))
+(setq command-error-function 'supress-error)
+
+;;;; Function to load all .el files in a given directory
 (defun load-directory (dir)
   (let ((load-it (lambda (f)
                    (load-file (concat (file-name-as-directory dir) f)))))
     (mapc load-it (directory-files dir nil "\\.el$"))))
 
-;; Load all .el files in "conf" directory
+;;;; Load all .el files in "conf" directory
 (load-directory (expand-file-name "conf" user-emacs-directory))
 
 ;; Add local package directory to the load path
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 ;; (load "local" 'noerror)
 
+;;;; Package.el settings
+
 ;; Set package-enable-at-startup nil to avoid loading packages twice.
 (setq package-enable-at-startup nil)
 
-;; Set up the archive URL according to the availability of SSL.
+;;;; Set up the archive URL according to the availability of SSL.
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))
        (proto (if no-ssl "http" "https")))
@@ -56,14 +84,17 @@
 (require 'package)
 (package-initialize)
 
+;;;; Use-pacakge initialization
+
 ;; Install use-package if it doesn't exist
 ;; Following code is for installing use-package via package.el.
-;; It is currently disabled as I'm using straight.el instead.
 (eval-when-compile
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
   (require 'use-package))
+
+;;;; Attempt to fix overlay conflict
 
 ;; (defvar lawlist-redisplay-unhighlight-region-function
 ;;   (lambda (rol) (when (overlayp rol) (delete-overlay rol))))
@@ -83,8 +114,17 @@
 ;;              (move-overlay rol start end (current-buffer)))
 ;;            rol)))
 
-;;; Core packages
 
+;;;; Dealing with very large files
+(defun find-file-large-file-hook ()
+  "If a file is over a given size, make the file open in
+Fundamental-mode, and disable the undo"
+  (when (> (buffer-size) (* 1024 1024))
+    (buffer-disable-undo)
+    (fundamental-mode)))
+(add-hook 'find-fle-hook 'find-file-large-file-hook)
+
+;;;; Benchmarking
 (use-package benchmark-init
   :ensure t
   :config
@@ -93,26 +133,17 @@
 
 ;; (load-theme 'wombat t)
 
-;; Disable unnecessary GUI elements
+(use-package doom-themes
+  :ensure t
+  :init
+  (load-theme 'doom-one-light t))
+
+;;;; Disable unnecessary GUI elements
 (menu-bar-mode -1)
 (when (boundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (boundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
-
-;; Suppress some error messages
-(defun supress-error (data context signal)
-  "Suppress some of the unnecessary error messages"
-  (when (not (memq (car data) '(beginning-of-line
-                                beginning-of-buffer
-                                end-of-line
-                                end-of-buffer
-                                text-read-only)))
-    (command-error-default-function data context signal)))
-(setq command-error-function 'supress-error)
-
-;; Whether frames should be resized implicitly.
-(setq-default frame-inhibit-implied-resize t)
 
 ;; Core packages
 (use-package esup
@@ -244,17 +275,6 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 (setq minibuffer-prompt-properties
       '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
-
-;; Set the font for macOS
-(when (eq system-type 'darwin)
-  (add-to-list 'default-frame-alist '(font . "Ricty Discord-12"))
-  (setq mac-option-modifier 'meta
-        mac-command-modifier 'super))
-
-;; Set the font for Windows
-(when (eq system-type 'windows-nt)
-  (set-face-attribute 'default nil :font "Myrica M-10")
-  (set-frame-font "Myrica M-10" nil t)) 
 
 ;; Temporary fix for screen blinking while inserting text with ime for macOS
 (when (eq system-type 'darwin)
@@ -864,7 +884,64 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package helm-navi
   :ensure t
-  :commands helm-navi)
+  :commands helm-navi
+  :config
+  (defun helm-navi--get-candidates-in-buffer (buffer &optional regexp)
+    "Return Outshine heading candidates in BUFFER.
+Optional argument REGEXP is a regular expression to match, a
+function to return a regular expression, or
+`outshine-promotion-headings' by default."
+    ;; Much of this code is copied from helm-org.el
+    (with-current-buffer buffer
+      ;; Make sure outshine is loaded
+      (unless outshine-promotion-headings
+        (error "Outshine is not activated in buffer \"%s\".  Activate `outline-minor-mode', or consult Outshine's documentation for further instructions if necessary." (buffer-name buffer)))
+      (let* ((heading-regexp (pcase regexp
+                               ((pred functionp) (funcall regexp))
+                               ((pred stringp) regexp)
+                               ((pred null) (concat "^\\("
+                                                    (mapconcat (lambda (s)
+                                                                 (s-trim (car s)))
+                                                               outshine-promotion-headings
+                                                               "\\|")
+                                                    "\\)"
+                                                    "\s+\\(.*\\)$"))))
+             (match-fn (if helm-navi-fontify
+                           #'match-string
+                         #'match-string-no-properties))
+             (search-fn (lambda ()
+                          (re-search-forward heading-regexp nil t))))
+        (save-excursion
+          (save-restriction
+            (goto-char (point-min))
+            (cl-loop while (funcall search-fn)
+                     for beg = (point-at-bol)
+                     for end = (point-at-eol)
+                     when (and helm-navi-fontify
+                               (null (text-property-any
+                                      beg end 'fontified t)))
+                     do (jit-lock-fontify-now beg end)
+                     for level = (length (match-string-no-properties 1))
+                     for heading = (if regexp
+                                       (funcall match-fn 0)
+                                     (concat (match-string 1) " " (funcall match-fn 2)))
+                     if (or regexp
+                            (and (>= level helm-org-headings-min-depth)
+                                 (<= level helm-org-headings-max-depth)))
+                     collect `(,heading . ,(point-marker))))))))
+  (defun helm-navi--get-regexp ()
+    "Return regexp for all headings and keywords in current buffer."
+    (concat (navi-make-regexp-alternatives
+             (navi-get-regexp (car
+                               (split-string
+                                (symbol-name major-mode)
+                                "-mode" 'OMIT-NULLS))
+                              :ALL)
+             (mapconcat (lambda (s)
+                          (s-trim (car s)))
+                        outshine-promotion-headings
+                        "\\|"))
+            ".*$")))
 
 (use-package helm-projectile
   :ensure t
@@ -912,11 +989,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 ;;   :ensure t
 ;;   :config
 ;;   (load-theme 'leuven t))
-
-(use-package doom-themes
-  :ensure t
-  :init
-  (load-theme 'doom-one t))
 
 (use-package lispy
   :ensure t
@@ -1059,7 +1131,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t
   :commands outshine-mode
   :config
-  (setq outshine-fontify nil))
+  (setq outshine-fontify t))
 
 (use-package ox-md
   :ensure nil
@@ -1117,7 +1189,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package recentf
   :ensure nil
+  :defer t
   :after no-littering
+  :init
+  (add-hook 'find-file-hook (lambda () (unless recentf-mode
+                                         (recentf-mode))))
   :config
   (setq recentf-max-menu-items 100)
   (add-to-list 'recentf-exclude no-littering-var-directory)
@@ -1185,13 +1261,46 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package treemacs
   :ensure t
+  :defer t
   :disabled
   :config
-  (setq treemacs-no-png-images t)
+  (setq treemacs-collapse-dirs              (if (executable-find "python") 3 0)
+        treemacs-deferred-git-apply-delay   0.5
+        treemacs-display-in-side-window     t
+        treemacs-file-event-delay           5000
+        treemacs-file-follow-delay          0.2
+        treemacs-follow-after-init          t
+        treemacs-follow-recenter-distance   0.1
+        treemacs-git-command-pipe           ""
+        treemacs-goto-tag-strategy          'refetch-index
+        treemacs-indentation                2
+        treemacs-indentation-string         " "
+        treemacs-is-never-other-window      nil
+        treemacs-max-git-entries            5000
+        treemacs-no-png-images              t
+        treemacs-no-delete-other-windows    t
+        treemacs-project-follow-cleanup     nil
+        treemacs-persist-file               (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+        treemacs-recenter-after-file-follow nil
+        treemacs-recenter-after-tag-follow  nil
+        treemacs-show-cursor                nil
+        treemacs-show-hidden-files          t
+        treemacs-silent-filewatch           nil
+        treemacs-silent-refresh             nil
+        treemacs-sorting                    'alphabetic-desc
+        treemacs-space-between-root-nodes   t
+        treemacs-tag-follow-cleanup         t
+        treemacs-tag-follow-delay           1.5
+        treemacs-width                      35)
   :general
   (:states '(normal)
    :prefix global-leader
-   "tn" 'treemacs-toggle))
+   "tn" 'treemacs))
+
+(use-package treemacs-evil
+  :after treemacs evil
+  :ensure t
+  :disabled)
 
 (use-package undo-tree
   :ensure t
@@ -1212,9 +1321,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package vlf
   :ensure t
-  :demand
-  :config
-  (require 'vlf-setup))
+  :defer t
+  :commands vlf-mode)
 
 (use-package web-mode
   :ensure t
