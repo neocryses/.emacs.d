@@ -2,14 +2,15 @@
 
 ;;; Core configuration
 
-;;;; Avoid unwanted package-initialize
-(setq package--init-file-ensured t)
-
 ;;;; Startup optimization
+
+;; Avoid unwanted package-initialize
+(setq package--init-file-ensured t)
 
 ;; Remember the original value file name handler
 (defvar prev-file-name-handler-alist file-name-handler-alist)
 
+;; Disable file-name-handler and increase gc-cons-threshold
 (setq file-name-handler-alist nil
       gc-cons-threshold 402653184
       gc-cons-percentage 0.6)
@@ -30,21 +31,7 @@
 ;;   (with-eval-after-load 'gnutls
 ;;     (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem")))
 
-;; Whether frames should be resized implicitly.
-(setq-default frame-inhibit-implied-resize t)
-
-;; Set the font for macOS
-(when (eq system-type 'darwin)
-  (add-to-list 'default-frame-alist '(font . "Ricty Discord-12"))
-  (setq mac-option-modifier 'meta
-        mac-command-modifier 'super))
-
-;; Set the font for Windows
-(when (eq system-type 'windows-nt)
-  (set-face-attribute 'default nil :font "Myrica M-10")
-  (set-frame-font "Myrica M-10" nil t)) 
-
-;;;; Suppress some error messages
+;;;; Suppressing error messages
 (defun supress-error (data context signal)
   "Suppress some of the unnecessary error messages"
   (when (not (memq (car data) '(beginning-of-line
@@ -132,18 +119,6 @@ Fundamental-mode, and disable the undo"
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
 ;; (load-theme 'wombat t)
-
-(use-package doom-themes
-  :ensure t
-  :init
-  (load-theme 'doom-one-light t))
-
-;;;; Disable unnecessary GUI elements
-(menu-bar-mode -1)
-(when (boundp 'tool-bar-mode)
-  (tool-bar-mode -1))
-(when (boundp 'scroll-bar-mode)
-  (scroll-bar-mode -1))
 
 ;; Core packages
 (use-package esup
@@ -294,6 +269,33 @@ Fundamental-mode, and disable the undo"
 ;;   "Shows the interactive command that was just run in the message area."
 ;;   (unless (eq major-mode 'minibuffer-inactive-mode)
 ;;     (message "Ran %s" (ad-get-arg 0))))
+
+;;; GUI settings
+;; Whether frames should be resized implicitly.
+(setq-default frame-inhibit-implied-resize t)
+
+;; Set the font for macOS
+(when (eq system-type 'darwin)
+  (add-to-list 'default-frame-alist '(font . "Ricty Discord-12"))
+  (setq mac-option-modifier 'meta
+        mac-command-modifier 'super))
+
+;; Set the font for Windows
+(when (eq system-type 'windows-nt)
+  (set-face-attribute 'default nil :font "Myrica M-10")
+  (set-frame-font "Myrica M-10" nil t)) 
+
+(use-package doom-themes
+  :ensure t
+  :init
+  (load-theme 'doom-one-light t))
+
+;;;; Disable unnecessary GUI elements
+(menu-bar-mode -1)
+(when (boundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+(when (boundp 'scroll-bar-mode)
+  (scroll-bar-mode -1))
 
 ;;; Packages
 
@@ -1113,6 +1115,11 @@ function to return a regular expression, or
    "vc" 'org-content
    "va" 'outline-show-all))
 
+(use-package org-bullets
+  :ensure t
+  :disabled
+  :hook (org-mode . org-bullets-mode))
+
 (use-package origami
   :ensure t
   :disabled
@@ -1129,9 +1136,8 @@ function to return a regular expression, or
 (use-package outshine
   :ensure t
   :defer t
-  :commands outshine-mode
-  :config
-  (setq outshine-fontify t))
+  :hook (emacs-lisp-mode . outshine-mode)
+  :commands outshine-mode)
 
 (use-package ox-md
   :ensure nil
