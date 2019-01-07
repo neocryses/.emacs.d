@@ -22,45 +22,12 @@
                            gc-cons-threshold 16777216
                            gc-cons-percentage 0.1)))
 
-;; There's a bug with the macOS's Emacs where it doesn't recognize SSL certificates.
-;; To avoid this issue, libressl should be installed via Homebrew.
-;; Following code will load certificates using libressl.
-;; Alternative solution is to build Emacs with gnutls.
-;; (when (and (eq system-type 'darwin)
-;;            (not (gnutls-available-p)))
-;;   (with-eval-after-load 'gnutls
-;;     (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem")))
-
-;;;; Suppressing error messages
-(defun supress-error (data context signal)
-  "Suppress some of the unnecessary error messages"
-  (when (not (memq (car data) '(beginning-of-line
-                                beginning-of-buffer
-                                end-of-line
-                                end-of-buffer
-                                text-read-only)))
-    (command-error-default-function data context signal)))
-(setq command-error-function 'supress-error)
-
-;;;; Function to load all .el files in a given directory
-(defun load-directory (dir)
-  (let ((load-it (lambda (f)
-                   (load-file (concat (file-name-as-directory dir) f)))))
-    (mapc load-it (directory-files dir nil "\\.el$"))))
-
-;;;; Load all .el files in "conf" directory
-(load-directory (expand-file-name "conf" user-emacs-directory))
-
-;; Add local package directory to the load path
-(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-;; (load "local" 'noerror)
-
-;;;; Package.el settings
+;;;; Package.el initialization
 
 ;; Set package-enable-at-startup nil to avoid loading packages twice.
 (setq package-enable-at-startup nil)
 
-;;;; Set up the archive URL according to the availability of SSL.
+;; Set up the archive URL according to the availability of SSL.
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))
        (proto (if no-ssl "http" "https")))
@@ -71,7 +38,7 @@
 (require 'package)
 (package-initialize)
 
-;;;; Use-pacakge initialization
+;;;; Use-package initialization
 
 ;; Install use-package if it doesn't exist
 ;; Following code is for installing use-package via package.el.
@@ -81,28 +48,27 @@
     (package-install 'use-package))
   (require 'use-package))
 
-;;;; Attempt to fix overlay conflict
+;;;; Load path settings
 
-;; (defvar lawlist-redisplay-unhighlight-region-function
-;;   (lambda (rol) (when (overlayp rol) (delete-overlay rol))))
+(defun load-directory (dir)
+  (let ((load-it (lambda (f)
+                   (load-file (concat (file-name-as-directory dir) f)))))
+    (mapc load-it (directory-files dir nil "\\.el$"))))
 
-;; (setq redisplay-highlight-region-function
-;;       '(lambda (start end window rol)
-;;          (if (not (overlayp rol))
-;;              (let ((nrol (make-overlay start end)))
-;;                (funcall lawlist-redisplay-unhighlight-region-function rol)
-;;                (overlay-put nrol 'window window)
-;;                (overlay-put nrol 'face 'region)
-;;                (overlay-put nrol 'priority '(1002 . 1002))
-;;                nrol)
-;;            (unless (and (eq (overlay-buffer rol) (current-buffer))
-;;                         (eq (overlay-start rol) start)
-;;                         (eq (overlay-end rol) end))
-;;              (move-overlay rol start end (current-buffer)))
-;;            rol)))
+;;;; Suppress error messages
 
+(defun supress-error (data context signal)
+  "Suppress some of the unnecessary error messages"
+  (when (not (memq (car data) '(beginning-of-line
+                                beginning-of-buffer
+                                end-of-line
+                                end-of-buffer
+                                text-read-only)))
+    (command-error-default-function data context signal)))
+(setq command-error-function 'supress-error)
 
 ;;;; Dealing with very large files
+
 (defun find-file-large-file-hook ()
   "If a file is over a given size, make the file open in
 Fundamental-mode, and disable the undo"
@@ -112,17 +78,17 @@ Fundamental-mode, and disable the undo"
 (add-hook 'find-fle-hook 'find-file-large-file-hook)
 
 ;;;; Benchmarking
+
 (use-package benchmark-init
   :ensure t
   :config
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
-;; (load-theme 'wombat t)
-
-;; Core packages
 (use-package esup
   :ensure t)
+
+;;;; Data and configuration files
 
 (use-package no-littering
   :ensure t
@@ -131,8 +97,11 @@ Fundamental-mode, and disable the undo"
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 
+;;;; Modeline
+
 (use-package delight :ensure t)
 
+;;;; Key-bindings
 (use-package general
   :ensure t
   :config
@@ -161,6 +130,8 @@ Fundamental-mode, and disable the undo"
     ("g" text-scale-increase "in")
     ("l" text-scale-decrease "out")))
 
+;;;; Encodings
+
 (use-package cp5022x
   :ensure t
   :demand
@@ -177,19 +148,12 @@ Fundamental-mode, and disable the undo"
                         'katakana-jisx0201 'iso-8859-1 'unicode)
   (set-coding-system-priority 'utf-8 'euc-jp 'iso-2022-jp 'cp932))
 
+;;;; Package management
 (use-package paradox
   :ensure t
   :defer 1
   :config
   (paradox-enable))
-
-;; Allow for location specific settings
-(defvar home-computer '("Shos-MacBook.local")
-  "List of home computer names")
-(defvar work-computer '("IWA0030131")
-  "List of work computer names")
-
-;; Settings for Emacs' core features.
 
 ;; Set the startup behavior
 (setq initial-major-mode 'emacs-lisp-mode
@@ -352,7 +316,7 @@ Fundamental-mode, and disable the undo"
   :commands dired
   :general
   (:keymaps '(dired-mode-map)
-   :states '(normal)
+   :states '(normal visual)
    "q" 'quit-window
    "j" 'dired-next-line
    "k" 'dired-previous-line
@@ -504,7 +468,7 @@ Fundamental-mode, and disable the undo"
   :after dired
   :general
   (:keymaps '(dired-mode-map)
-   :states '(normal)
+   :states '(normal visual)
    [return] 'dired-single-buffer
    [mouse-1] 'dired-single-buffer-mouse
    "^" 'dired-single-up-directory))
@@ -839,7 +803,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "C-l" 'helm-maybe-exit-minibuffer
    "M-x" 'helm-select-action
    "C-r" 'evil-paste-from-register)
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "SPC" 'helm-M-x
    "ff" 'helm-find-files
@@ -949,7 +913,7 @@ function to return a regular expression, or
   :ensure t
   :defer t
   :general
-  (:states  '(normal)
+  (:states  '(normal visual)
    :prefix global-leader
    "pp" 'helm-projectile-switch-project
    "pf" 'helm-projectile-find-file))
@@ -958,7 +922,7 @@ function to return a regular expression, or
   :ensure t
   :after helm
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "/" 'helm-swoop))
 
@@ -966,7 +930,7 @@ function to return a regular expression, or
   :ensure t
   :after '(helm org)
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "or" 'helm-org-rifle))
 
@@ -1007,7 +971,7 @@ function to return a regular expression, or
 (use-package magit
   :ensure t
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "gs" 'magit-status))
 
@@ -1026,7 +990,7 @@ function to return a regular expression, or
   :config
   (setq neo-theme 'ascii)
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "tt" 'neotree-toggle))
 
@@ -1089,14 +1053,20 @@ function to return a regular expression, or
            (file "~/org/notes.org") "* %?\n")
           ("t" "Todo" entry
            (file "~/org/tasks.org") "* TODO %?\n SCHEDULED: %^t\n")))
-  (when (member (system-name) work-computer)
-    (add-to-list 'org-capture-templates
-                 '("i" "Inquiry" entry
-                   (file "~/org/inquiry.org") "* %?\n")))
   (setq org-todo-keywords
         '((sequence "TODO(t)" "|" "DONE(d)" "CANCELED(c)")))
+  (add-to-list
+   'org-src-lang-modes '("plantuml" . plantuml))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+     (emacs-lisp . t)
+     (calc . t)
+     (plantuml . t)
+     (shell . t)
+     (sql . t)))
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "ac" 'org-capture)
   (:states '(normal)
@@ -1148,6 +1118,12 @@ function to return a regular expression, or
   :ensure nil
   :hook (prog-mode . show-paren-mode))
 
+(use-package plantuml-mode
+  :ensure t
+  :defer t
+  :mode (("\\.pu\\'" . plantuml-mode)
+         ("\\.plantuml\\'" . plantuml-mode)))
+
 (use-package projectile
   :ensure t
   :defer t
@@ -1188,7 +1164,7 @@ function to return a regular expression, or
   :general
   ;; (:keymaps '(normal)
   ;;  "-" 'deer)
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "ar" 'ranger
    "ad" 'deer))
@@ -1252,7 +1228,7 @@ function to return a regular expression, or
      (t '("x-terminal-emulator"))))
   (setq terminal-here-terminal-command 'terminal-here-default-terminal-command)
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "at" 'terminal-here-launch))
 
@@ -1299,7 +1275,7 @@ function to return a regular expression, or
         treemacs-tag-follow-delay           1.5
         treemacs-width                      35)
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "tn" 'treemacs))
 
@@ -1313,9 +1289,10 @@ function to return a regular expression, or
   :delight undo-tree-mode
   :defer t
   :config
-  (setq undo-tree-auto-save-history t)
+  (setq undo-tree-auto-save-history t
+        undo-tree-enable-undo-in-region nil)
   :general
-  (:states '(normal)
+  (:states '(normal visual)
    :prefix global-leader
    "tu" 'undo-tree-visualize))
 
