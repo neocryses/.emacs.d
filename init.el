@@ -1,8 +1,6 @@
 ;; init.el --- Emacs configuration file -*- lexical-binding: t -*-
 
-;;; Core configuration
-
-;;;; Startup optimization
+;;; Startup optimization
 
 ;; Avoid unwanted package-initialize
 (setq package--init-file-ensured t)
@@ -22,7 +20,12 @@
                            gc-cons-threshold 16777216
                            gc-cons-percentage 0.1)))
 
-;;;; Package.el initialization
+;;; Core configuration
+
+
+;;;; Package management
+
+;;;;; Package.el
 
 ;; Set package-enable-at-startup nil to avoid loading packages twice.
 (setq package-enable-at-startup nil)
@@ -38,7 +41,7 @@
 (require 'package)
 (package-initialize)
 
-;;;; Use-package initialization
+;;;;; Use-package
 
 ;; Install use-package if it doesn't exist
 ;; Following code is for installing use-package via package.el.
@@ -47,13 +50,6 @@
     (package-refresh-contents)
     (package-install 'use-package))
   (require 'use-package))
-
-;;;; Load path settings
-
-(defun load-directory (dir)
-  (let ((load-it (lambda (f)
-                   (load-file (concat (file-name-as-directory dir) f)))))
-    (mapc load-it (directory-files dir nil "\\.el$"))))
 
 ;;;; Suppress error messages
 
@@ -77,6 +73,8 @@ Fundamental-mode, and disable the undo"
     (fundamental-mode)))
 (add-hook 'find-fle-hook 'find-file-large-file-hook)
 
+;;; Libraries
+
 ;;;; Benchmarking
 
 (use-package benchmark-init
@@ -88,7 +86,7 @@ Fundamental-mode, and disable the undo"
 (use-package esup
   :ensure t)
 
-;;;; Data and configuration files
+;;;; No-Littering
 
 (use-package no-littering
   :ensure t
@@ -97,16 +95,19 @@ Fundamental-mode, and disable the undo"
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 
-;;;; Modeline
+;;;; Delight
 
 (use-package delight :ensure t)
 
-;;;; Key-bindings
+;;;; General
+
 (use-package general
   :ensure t
   :config
   (setq global-leader "SPC"
         major-mode-leader ","))
+
+;;;; Which-Key
 
 (use-package which-key
   :ensure t
@@ -121,6 +122,8 @@ Fundamental-mode, and disable the undo"
    ;; "" '(:ignore t :which-key "global prefix")
    "f" '(:ignore t :which-key "files")))
 
+;;;; Hydra
+
 (use-package hydra
   :ensure t
   :defer t
@@ -130,7 +133,7 @@ Fundamental-mode, and disable the undo"
     ("g" text-scale-increase "in")
     ("l" text-scale-decrease "out")))
 
-;;;; Encodings
+;;;; Cp5022x
 
 (use-package cp5022x
   :ensure t
@@ -148,12 +151,15 @@ Fundamental-mode, and disable the undo"
                         'katakana-jisx0201 'iso-8859-1 'unicode)
   (set-coding-system-priority 'utf-8 'euc-jp 'iso-2022-jp 'cp932))
 
-;;;; Package management
+;;;; Paradox
+
 (use-package paradox
   :ensure t
   :defer 1
   :config
   (paradox-enable))
+
+;;;; Settings
 
 ;; Set the startup behavior
 (setq initial-major-mode 'emacs-lisp-mode
@@ -234,32 +240,71 @@ Fundamental-mode, and disable the undo"
 ;;   (unless (eq major-mode 'minibuffer-inactive-mode)
 ;;     (message "Ran %s" (ad-get-arg 0))))
 
-;;; GUI settings
+;;; UI settings
+
 ;; Whether frames should be resized implicitly.
 (setq-default frame-inhibit-implied-resize t)
 
+;;;; Font settings
+
+(defvar ef/font "Operator Mono SSm-11"
+  "Font to be used for English characters")
+
+(defvar ef/font-ja "Ricty Discord"
+  "Font to be used for Japanese characters")
+
+(defun ef/set-font (&optional frame)
+  (when frame
+    (select-frame frame))
+  (set-face-attribute 'default nil :font ef/font)
+  (dolist (charset '(kana han symbol cjk-misc bopomofo))
+    (set-fontset-font (frame-parameter nil 'font) charset
+                      (font-spec :family ef/font-ja :size 14))))
+(ef/set-font)
+(add-hook 'after-make-frame-functions #'ef/set-font)
+
 ;; Set the font for macOS
-(when (eq system-type 'darwin)
-  (add-to-list 'default-frame-alist '(font . "Ricty Discord-12"))
-  (setq mac-option-modifier 'meta
-        mac-command-modifier 'super))
+;; (when (eq system-type 'darwin)
+;;   (add-to-list 'default-frame-alist '(font . "Operator Mono SSm-10"))
+;;   (setq mac-option-modifier 'meta
+;;         mac-command-modifier 'super))
 
 ;; Set the font for Windows
-(when (eq system-type 'windows-nt)
-  (set-face-attribute 'default nil :font "Myrica M-10")
-  (set-frame-font "Myrica M-10" nil t)) 
+;; (when (eq system-type 'windows-nt)
+;;   (set-face-attribute 'default nil :font "Myrica M-10")
+;;   (set-frame-font "Myrica M-10" nil t)) 
 
-(use-package doom-themes
-  :ensure t
-  :init
-  (load-theme 'doom-one-light t))
+;; Windows specific setting - here only temporarily
+;; (set-face-attribute 'default nil :font "Operator Mono SSm-10")
+;; (set-frame-font "Operator Mono SSm-10" nil t)
+
+;; 半角英字設定
+;; (set-face-attribute 'default nil :family "Myrica M" :height 90)
+
+;; 全角かな設定
+;; (set-fontset-font (frame-parameter nil 'font)
+;;                   'japanese-jisx0208
+;;                   (font-spec :family "Ricty Discord" :size 12))
+
+;; 半角ｶﾅ設定
+;; (set-fontset-font (frame-parameter nil 'font)
+;;                   'katakana-jisx0201
+;;                   (font-spec :family "Ricty Discord" :size 12))
 
 ;;;; Disable unnecessary GUI elements
+
 (menu-bar-mode -1)
 (when (boundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (boundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
+
+;;;; Themes
+
+(use-package doom-themes
+  :ensure t
+  :init
+  (load-theme 'doom-one-light t))
 
 ;;; Packages
 
@@ -662,28 +707,32 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "tn" 'evil-ex-nohighlight))
 
 (use-package evil-anzu
+  :after evil
   :ensure t
   :defer t)
 
 (use-package evil-commentary
+  :after evil
   :ensure t
   :delight evil-commentary-mode
   :hook (prog-mode . evil-commentary-mode))
 
 (use-package evil-ediff
+  :after evil
   :ensure t
   :after ediff
   :defer t
   :hook (ediff-mode . evil-ediff-init))
 
 (use-package evil-indent-plus
+  :after evil
   :ensure t
   :config
   (evil-indent-plus-default-bindings))
 
 (use-package evil-surround
+  :after evil
   :ensure t
-  :defer t
   :config
   (global-evil-surround-mode 1)
   :general
