@@ -252,7 +252,7 @@ Fundamental-mode, and disable the undo"
 
 ;;;;; Version 5
 
-(defun ef/set-font (&optional frame)
+(defun set-font (&optional frame)
   (when frame
     (select-frame frame))
   (let* ((font-family "Operator Mono SSm")
@@ -278,8 +278,8 @@ Fundamental-mode, and disable the undo"
       (dolist (character characters)
         (set-fontset-font name character font-spec))
       (add-to-list 'face-font-rescale-alist (cons jp-font-family 1.3)))))
-(ef/set-font)
-(add-hook 'after-make-frame-functions #'ef/set-font)
+(set-font)
+(add-hook 'after-make-frame-functions #'set-font)
 
 ;;;;; Version 4
 
@@ -727,12 +727,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
       (apply orig-fun args)))
   (advice-add 'push-mark :around #'supress-message)
 
-  ;; (defhydra hydra-search (:post (evil-ex-nohighlight))
-  ;;   "search"
-  ;;   ("/" evil-ex-search-forward)
-  ;;   ("?" evil-ex-search-backward)
-  ;;   ("n" evil-ex-search-next)
-  ;;   ("N" evil-ex-search-previous))
   :general
   ;; Exit out with ESC
   (:states '(normal visual)
@@ -743,13 +737,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
               minibuffer-local-must-match-map
               minibuffer-local-isearch-map)
    [escape] 'minibuffer-keyboard-quit)
-
-  ;; Hydra search
-  ;; (:states '(normal visual)
-  ;;  "/" #'hydra-search/evil-ex-search-forward
-  ;;  "?" #'hydra-search/evil-ex-search-backward
-  ;;  "n" #'hydra-search/evil-ex-search-next
-  ;;  "N" #'hydra-search/evil-ex-search-previous)
 
   ;; Disable selection marking with "C-SPC"
   (:keymaps '(global)
@@ -798,7 +785,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package evil-surround
   :after evil
   :ensure t
+  :demand t
   :config
+  (add-to-list 'evil-surround-operator-alist
+               '(lispyville-change . change))
+  (add-to-list 'evil-surround-operator-alist
+               '(lispyville-delete . delete))
   (global-evil-surround-mode 1)
   :general
   (:states '(visual)
@@ -817,8 +809,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (global-evil-visualstar-mode))
 
 (use-package evil-magit
-  :ensure t
-  :after magit)
+  :after magit
+  :ensure t)
 
 (use-package evil-org
   :ensure t
