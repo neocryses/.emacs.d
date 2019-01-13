@@ -817,10 +817,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (global-evil-visualstar-mode))
 
-(use-package evil-magit
-  :after magit
-  :ensure t)
-
 (use-package evil-org
   :ensure t
   :after org
@@ -1090,11 +1086,21 @@ function to return a regular expression, or
    :prefix global-leader
    "gs" 'magit-status))
 
+(use-package evil-magit
+  :after magit
+  :ensure t)
+
 (use-package git-gutter
   :ensure t
   :defer 1
+  :init
+  (setq git-gutter:update-interval 1)
   :config
-  (global-git-gutter-mode +1))
+  (global-git-gutter-mode +1)
+  :general
+  (:states '(normal visual)
+   "]c" 'git-gutter:next-hunk
+   "[c" 'git-gutter:previous-hunk))
 
 (use-package markdown-mode
   :ensure t
