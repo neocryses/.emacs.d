@@ -91,15 +91,6 @@ Fundamental-mode, and disable the undo"
 (use-package esup
   :ensure t)
 
-;;;; No-Littering
-
-(use-package no-littering
-  :ensure t
-  :config
-  (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
-  (setq auto-save-file-name-transforms
-        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
-
 ;;;; Delight
 
 (use-package delight :ensure t)
@@ -163,6 +154,15 @@ Fundamental-mode, and disable the undo"
   :defer 1
   :config
   (paradox-enable))
+
+;;;; No-Littering
+
+(use-package no-littering
+  :ensure t
+  :config
+  (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
+  (setq auto-save-file-name-transforms
+        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 
 ;;;; Settings
 
@@ -708,6 +708,7 @@ Lisp function does not specify a special indentation."
   :ensure t
   :demand
   :init
+  (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-i-jump t)
   (setq evil-want-Y-yank-to-eol t)
@@ -757,6 +758,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal visual)
    :prefix global-leader
    "tn" 'evil-ex-nohighlight))
+
+;; This package needs evil-want-keybinding set to nil on evil init
+(use-package evil-collection
+  :after evil
+  :ensure t
+  :demand
+  :config
+  (evil-collection-init))
 
 (use-package evil-anzu
   :after evil
@@ -858,6 +867,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq helm-mode-fuzzy-match t)
   (setq helm-display-header-line nil)
   (setq helm-split-window-inside-p t)
+  (setq helm-ff-kill-or-find-buffer-fname-fn 'ignore)
   :config
   (helm-mode 1)
   (helm-autoresize-mode 1)
