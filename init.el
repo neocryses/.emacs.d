@@ -50,7 +50,7 @@
     (package-install 'use-package))
   (require 'use-package))
 
-;;;; Suppress error messages
+;;;; Suppress messages
 
 (defun supress-error (data context signal)
   "Suppress some of the unnecessary error messages"
@@ -61,6 +61,12 @@
                                 text-read-only)))
     (command-error-default-function data context signal)))
 (setq command-error-function 'supress-error)
+
+(defun supress-message (orig-fun &rest args)
+  "Fix the handling of the coding for external commands"
+  (let ((inhibit-message t))
+    (apply orig-fun args)))
+(advice-add 'push-mark :around #'supress-message)
 
 ;;;; Dealing with very large files
 
@@ -454,14 +460,14 @@ Fundamental-mode, and disable the undo"
    "&" 'dired-do-async-shell-command
    "=" 'dired-diff
    ;; Tree Dired commands
-   (kbd "M-C-?") 'dired-unmark-all-files
-   (kbd "M-C-d") 'dired-tree-down
-   (kbd "M-C-u") 'dired-tree-up
-   (kbd "M-C-n") 'dired-next-subdir
-   (kbd "M-C-p") 'dired-prev-subdir
+   "M-C-?" 'dired-unmark-all-files
+   "M-C-d" 'dired-tree-down
+   "M-C-u" 'dired-tree-up
+   "M-C-n" 'dired-next-subdir
+   "M-C-p" 'dired-prev-subdir
    ;; move to marked files
-   (kbd "M-{") 'dired-prev-marked-file
-   (kbd "M-}") 'dired-next-marked-file
+   "M-{" 'dired-prev-marked-file
+   "M-}" 'dired-next-marked-file
    ;; Make all regexp commands share a `%' prefix:
    ;; We used to get to the submap via a symbol dired-regexp-prefix,
    ;; but that seems to serve little purpose, and copy-keymap
@@ -494,15 +500,15 @@ Fundamental-mode, and disable the undo"
    "*?" 'dired-unmark-all-files
    "*!" 'dired-unmark-all-marks
    "U" 'dired-unmark-all-marks
-   (kbd "* <delete>") 'dired-unmark-backward
-   (kbd "* C-n") 'dired-next-marked-file
-   (kbd "* C-p") 'dired-prev-marked-file
+   "* <delete>" 'dired-unmark-backward
+   "* C-n" 'dired-next-marked-file
+   "* C-p" 'dired-prev-marked-file
    "*t" 'dired-toggle-marks
    ;; Lower keys for commands not operating on all the marked files
    "a" 'dired-find-alternate-file
    "d" 'dired-flag-file-deletion
    "gf" 'dired-find-file
-   (kbd "C-m") 'dired-find-file
+   "C-m" 'dired-find-file
    "gr" 'revert-buffer
    "i" 'dired-toggle-read-only
    "I" 'dired-maybe-insert-subdir
@@ -518,9 +524,9 @@ Fundamental-mode, and disable the undo"
    "Y" 'dired-copy-filename-as-kill
    "+" 'dired-create-directory
    ;; open
-   (kbd "<return>") 'dired-find-file
-   (kbd "S-<return>") 'dired-find-file-other-window
-   (kbd "M-<return>") 'dired-display-file
+   "<return>" 'dired-find-file
+   "S-<return>" 'dired-find-file-other-window
+   "M-<return>" 'dired-display-file
    "gO" 'dired-find-file-other-window
    "go" 'dired-view-file
    ;; sort
@@ -539,34 +545,34 @@ Fundamental-mode, and disable the undo"
    [remap previous-line] 'dired-previous-line
    ;; hiding
    "g$" 'dired-hide-subdir ;; FIXME: This can probably live on a better binding.
-   (kbd "M-$") 'dired-hide-all
+   "M-$" 'dired-hide-all
    "(" 'dired-hide-details-mode
    ;; isearch
-   (kbd "M-s a C-s")   'dired-do-isearch
-   (kbd "M-s a M-C-s") 'dired-do-isearch-regexp
-   (kbd "M-s f C-s")   'dired-isearch-filenames
-   (kbd "M-s f M-C-s") 'dired-isearch-filenames-regexp
+   "M-s a C-s"   'dired-do-isearch
+   "M-s a M-C-s" 'dired-do-isearch-regexp
+   "M-s f C-s"   'dired-isearch-filenames
+   "M-s f M-C-s" 'dired-isearch-filenames-regexp
    ;; misc
    [remap read-only-mode] 'dired-toggle-read-only
    ;; `toggle-read-only' is an obsolete alias for `read-only-mode'
    [remap toggle-read-only] 'dired-toggle-read-only
    "g?" 'dired-summary
-   (kbd "<delete>") 'dired-unmark-backward
+   "<delete>" 'dired-unmark-backward
    [remap undo] 'dired-undo
    [remap advertised-undo] 'dired-undo
    ;; thumbnail manipulation (image-dired)
-   (kbd "C-t d") 'image-dired-display-thumbs
-   (kbd "C-t t") 'image-dired-tag-files
-   (kbd "C-t r") 'image-dired-delete-tag
-   (kbd "C-t j") 'image-dired-jump-thumbnail-buffer
-   (kbd "C-t i") 'image-dired-dired-display-image
-   (kbd "C-t x") 'image-dired-dired-display-external
-   (kbd "C-t a") 'image-dired-display-thumbs-append
-   (kbd "C-t .") 'image-dired-display-thumb
-   (kbd "C-t c") 'image-dired-dired-comment-files
-   (kbd "C-t f") 'image-dired-mark-tagged-files
-   (kbd "C-t C-t") 'image-dired-dired-toggle-marked-thumbs
-   (kbd "C-t e") 'image-dired-dired-edit-comment-and-tags
+   "C-t d" 'image-dired-display-thumbs
+   "C-t t" 'image-dired-tag-files
+   "C-t r" 'image-dired-delete-tag
+   "C-t j" 'image-dired-jump-thumbnail-buffer
+   "C-t i" 'image-dired-dired-display-image
+   "C-t x" 'image-dired-dired-display-external
+   "C-t a" 'image-dired-display-thumbs-append
+   "C-t ." 'image-dired-display-thumb
+   "C-t c" 'image-dired-dired-comment-files
+   "C-t f" 'image-dired-mark-tagged-files
+   "C-t C-t" 'image-dired-dired-toggle-marked-thumbs
+   "C-t e" 'image-dired-dired-edit-comment-and-tags
    ;; encryption and decryption (epa-dired)
    ";d" 'epa-dired-do-decrypt
    ";v" 'epa-dired-do-verify
@@ -720,12 +726,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
         (setq deactivate-mark  t)
       (when (get-buffer "*Completions*") (delete-windows-on "*Completions*"))
       (abort-recursive-edit)))
-
-  (defun supress-message (orig-fun &rest args)
-    "Fix the handling of the coding for external commands"
-    (let ((inhibit-message t))
-      (apply orig-fun args)))
-  (advice-add 'push-mark :around #'supress-message)
 
   :general
   ;; Exit out with ESC
@@ -1081,6 +1081,12 @@ function to return a regular expression, or
    :prefix global-leader
    "gs" 'magit-status))
 
+(use-package git-gutter
+  :ensure t
+  :defer 1
+  :config
+  (global-git-gutter-mode +1))
+
 (use-package markdown-mode
   :ensure t
   :mode (("\\`README\\.md\\'" . gfm-mode)
@@ -1093,6 +1099,7 @@ function to return a regular expression, or
 
 (use-package neotree
   :ensure t
+  :disabled
   :config
   (setq neo-theme 'ascii)
   :general
