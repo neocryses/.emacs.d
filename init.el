@@ -1044,11 +1044,10 @@ function to return a regular expression, or
 
 (use-package helm-org-rifle
   :ensure t
-  :after '(helm org)
   :general
   (:states '(normal visual)
    :prefix global-leader
-   "or" 'helm-org-rifle))
+   "or" 'helm-org-rifle-org-directory))
 
 (use-package htmlfontify
   :ensure t
@@ -1162,7 +1161,9 @@ function to return a regular expression, or
   :preface
   ;; (unless (file-expand-wildcards (concat package-user-dir "/org-[0-9]*"))
   ;;   (package-install (elt (cdr (assoc 'org package-archive-contents)) 0)))
+  :init
   :config
+  (setq org-directory "~/org")
   (setq org-src-preserve-indentation nil
         org-export-with-sub-superscripts nil
         org-edit-src-content-indentation 0
@@ -1191,7 +1192,7 @@ function to return a regular expression, or
   :general
   (:states '(normal visual)
    :prefix global-leader
-   "ac" 'org-capture)
+   "oc" 'org-capture)
   (:states '(normal)
    :keymaps '(org-mode-map)
    "-" 'org-cycle-list-bullet
