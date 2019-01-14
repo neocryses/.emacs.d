@@ -113,6 +113,7 @@ Fundamental-mode, and disable the undo"
   (which-key-mode 1)
   :general
   (:states '(normal visual)
+   :keymaps '(global-map)
    :prefix global-leader
    ;; "" '(:ignore t :which-key "global prefix")
    "f" '(:ignore t :which-key "Files")
@@ -928,6 +929,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "M-x" 'helm-select-action
    "C-r" 'evil-paste-from-register)
   (:states '(normal visual)
+   :keymaps '(override)
    :prefix global-leader
    "SPC" 'helm-M-x
    "ff" 'helm-find-files
