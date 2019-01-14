@@ -1,9 +1,8 @@
 ;; init.el --- Emacs configuration file -*- lexical-binding: t -*-
 
-;;; Startup optimization
+(setq package--init-file-ensured t) ;; Avoid unwanted package-initialize
 
-;; Avoid unwanted package-initialize
-(setq package--init-file-ensured t)
+;;; Startup optimization
 
 ;; Remember the original value file name handler
 (defvar prev-file-name-handler-alist file-name-handler-alist)
@@ -116,7 +115,12 @@ Fundamental-mode, and disable the undo"
   (:states '(normal visual)
    :prefix global-leader
    ;; "" '(:ignore t :which-key "global prefix")
-   "f" '(:ignore t :which-key "files")))
+   "f" '(:ignore t :which-key "Files")
+   "g" '(:ignore t :which-key "Git")
+   "o" '(:ignore t :which-key "Org")
+   "h" '(:ignore t :which-key "Help")
+   "b" '(:ignore t :which-key "Buffer")
+   "p" '(:ignore t :which-key "Project")))
 
 ;;;; Hydra
 
@@ -290,10 +294,10 @@ Fundamental-mode, and disable the undo"
 ;;;;; Version 4
 
 ;; (when (eq system-type 'darwin)
-;;   (let* ((fontset-name "macos")         ; フォントセットの名前
-;;          (size 11) ; ASCIIフォントのサイズ [9/10/12/14/15/17/19/20/...]
-;;          (asciifont "Operator Mono SSm") ; ASCIIフォント
-;;          (jpfont "Ricty Discord")        ; 日本語フォント
+;;   (let* ((fontset-name "macos")
+;;          (size 11)
+;;          (asciifont "Operator Mono SSm")
+;;          (jpfont "Ricty Discord")
 ;;          (font (format "%s-%d:weight=normal:slant=normal" asciifont size))
 ;;          (fontspec (font-spec :family asciifont))
 ;;          (jp-fontspec (font-spec :family jpfont))
@@ -379,28 +383,125 @@ Fundamental-mode, and disable the undo"
 
 ;;; Packages
 
-(use-package aggressive-indent
+;;;; Evil
+
+(use-package evil
   :ensure t
-  :delight aggressive-indent-mode
+  :demand
   :init
-  :hook (emacs-lisp-mode . aggressive-indent-mode)
+  (setq evil-want-keybinding nil)
+  (setq evil-want-C-u-scroll t)
+  (setq evil-want-C-i-jump t)
+  (setq evil-want-Y-yank-to-eol t)
+  (setq evil-search-module 'evil-search)
   :config
-  (mapc (lambda (command)
-          (add-to-list 'aggressive-indent-protected-commands command))
-        '(evil-paste-after
-          evil-paste-before
-          evil-visual-paste)))
+  (evil-mode 1)
+  (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
+
+  ;; esc quits
+  (defun minibuffer-keyboard-quit ()
+    "Abort recursive edit.
+In Delete Selection mode, if the mark is active, just deactivate it;
+then it takes a second \\[keyboard-quit] to abort the minibuffer."
+    (interactive)
+    (if (and delete-selection-mode transient-mark-mode mark-active)
+        (setq deactivate-mark  t)
+      (when (get-buffer "*Completions*") (delete-windows-on "*Completions*"))
+      (abort-recursive-edit)))
+
+  :general
+  ;; Exit out with ESC
+  (:states '(normal visual)
+   [escape] 'keyboard-quit)
+  (:keymaps '(minibuffer-local-map
+              minibuffer-local-ns-map
+              minibuffer-local-completion-map
+              minibuffer-local-must-match-map
+              minibuffer-local-isearch-map)
+   [escape] 'minibuffer-keyboard-quit)
+
+  ;; Disable selection marking with "C-SPC"
+  (:keymaps '(global)
+   "C-SPC" nil)
+
+  (:keymaps '(evil-ex-completion-map)
+   "C-b" 'backward-char
+   "C-a" 'beginning-of-line
+   "C-e" 'end-of-line
+   "C-k" 'kill-line)
+  
+  ;; Exit out of insert state with "jk"
+  (:states '(insert)
+   "j" (general-key-dispatch 'self-insert-command
+         :timeout 0.25
+         "k" 'evil-normal-state))
+
+  (:states '(normal visual)
+   :prefix global-leader
+   "tn" 'evil-ex-nohighlight))
+
+;; This package needs evil-want-keybinding set to nil on evil init
+(use-package evil-collection
+  :after evil
+  :ensure t
+  :demand
+  :config
+  (evil-collection-init))
+
+(use-package evil-commentary
+  :after evil
+  :ensure t
+  :delight evil-commentary-mode
+  :hook (prog-mode . evil-commentary-mode))
+
+(use-package evil-indent-plus
+  :after evil
+  :ensure t
+  :config
+  (evil-indent-plus-default-bindings))
+
+(use-package evil-surround
+  :after evil
+  :ensure t
+  :demand t
+  :config
+  (add-to-list 'evil-surround-operator-alist
+               '(lispyville-change . change))
+  (add-to-list 'evil-surround-operator-alist
+               '(lispyville-delete . delete))
+  (global-evil-surround-mode 1)
+  :general
+  (:states '(visual)
+   "s" 'evil-surround-region))
+
+(use-package evil-textobj-entire
+  :ensure t)
+
+(use-package evil-textobj-line
+  :ensure t)
+
+(use-package evil-visualstar
+  :ensure t
+  :defer t
+  :config
+  (global-evil-visualstar-mode))
+
+;;;; Searching
 
 (use-package anzu
   :ensure t
   :defer t)
 
-(use-package autorevert
+(use-package evil-anzu
+  :after evil
   :ensure t
-  :defer t
-  :config
-  (setq auto-revert-interval 0.5)
-  (global-auto-revert-mode 1))
+  :defer t)
+
+(use-package rg
+  :ensure t
+  :commands (rg))
+
+;;;; Navigation
 
 (use-package avy
   :ensure t
@@ -410,21 +511,69 @@ Fundamental-mode, and disable the undo"
    :prefix global-leader
    "ss" 'avy-goto-char))
 
-(use-package company
+;;;; Window management
+
+(use-package shackle
   :ensure t
-  :delight company-mode
-  :commands (company-mode company-indent-or-complete-common)
-  :hook (prog-mode . company-mode)
-  :general
-  (:keymaps '(company-active-map)
-   [tab] 'company-complete-common-or-cycle
-   [backtab] 'company-select-previous
-   "C-n" 'company-select-next
-   "C-p" 'company-select-previous))
+  :defer t
+  :config
+  (setq shackle-default-alignment 'below
+        shackle-default-size 8
+        shackle-rules '(("*compilation*" :size 0.25 :noselect t)
+                        ("*info*" :size 0.5 :select t)
+                        ("*Backtrace*" :size 20 :noselect t)
+                        ("*Warnings*"  :size 12 :noselect t :autofit t)
+                        ("*Messages*"  :size 12 :noselect t)
+                        ("*Help*" :size 0.4)
+                        (apropos-mode :size 0.3)))
+  (shackle-mode 1))
+
+;;;; Linting
+
+(use-package flycheck
+  :disabled
+  :ensure t
+  :hook (prog-mode . flycheck-mode)
+  :config
+  (defun disable-fylcheck-in-org-src-block ()
+    (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+  (add-hook 'org-src-mode-hook #'disable-fylcheck-in-org-src-block))
+
+(use-package flyspell
+  :ensure t
+  :defer t
+  :commands (flyspell-mode flyspell-buffer))
+
+(use-package ispell
+  :ensure t
+  :defer t)
+
+;;;; Diff
 
 (use-package diff
   :ensure nil
   :defer t)
+
+(use-package ediff
+  :ensure nil
+  :defer t
+  :config
+  (setq ediff-window-setup-function 'ediff-setup-windows-plain))
+
+(use-package evil-ediff
+  :after evil
+  :ensure t
+  :after ediff
+  :defer t
+  :hook (ediff-mode . evil-ediff-init))
+
+(use-package vdiff
+  :ensure t
+  :defer t
+  :config
+  (setq vdiff-auto-refine t))
+
+;;;; File Explorer
 
 (use-package dired
   :ensure nil
@@ -594,6 +743,76 @@ Fundamental-mode, and disable the undo"
   :defer t
   :after dired)
 
+(use-package ranger
+  :ensure t
+  :disabled
+  :defer t
+  :config
+  (ranger-override-dired-mode t)
+  (setq ranger-cleanup-eagerly t)
+  :general
+  ;; (:keymaps '(normal)
+  ;;  "-" 'deer)
+  (:states '(normal visual)
+   :prefix global-leader
+   "ar" 'ranger
+   "ad" 'deer))
+
+(use-package treemacs
+  :ensure t
+  :defer t
+  :disabled
+  :config
+  (setq treemacs-collapse-dirs              (if (executable-find "python") 3 0)
+        treemacs-deferred-git-apply-delay   0.5
+        treemacs-display-in-side-window     t
+        treemacs-file-event-delay           5000
+        treemacs-file-follow-delay          0.2
+        treemacs-follow-after-init          t
+        treemacs-follow-recenter-distance   0.1
+        treemacs-git-command-pipe           ""
+        treemacs-goto-tag-strategy          'refetch-index
+        treemacs-indentation                2
+        treemacs-indentation-string         " "
+        treemacs-is-never-other-window      nil
+        treemacs-max-git-entries            5000
+        treemacs-no-png-images              t
+        treemacs-no-delete-other-windows    t
+        treemacs-project-follow-cleanup     nil
+        treemacs-persist-file               (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+        treemacs-recenter-after-file-follow nil
+        treemacs-recenter-after-tag-follow  nil
+        treemacs-show-cursor                nil
+        treemacs-show-hidden-files          t
+        treemacs-silent-filewatch           nil
+        treemacs-silent-refresh             nil
+        treemacs-sorting                    'alphabetic-desc
+        treemacs-space-between-root-nodes   t
+        treemacs-tag-follow-cleanup         t
+        treemacs-tag-follow-delay           1.5
+        treemacs-width                      35)
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "tn" 'treemacs))
+
+(use-package treemacs-evil
+  :after treemacs evil
+  :ensure t
+  :disabled)
+
+(use-package neotree
+  :disabled
+  :ensure t
+  :config
+  (setq neo-theme 'ascii)
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "tt" 'neotree-toggle))
+
+;;;; Line Numbers
+
 (use-package display-line-numbers
   :ensure nil
   :unless (version< emacs-version "26.0")
@@ -607,19 +826,388 @@ Fundamental-mode, and disable the undo"
   ;;           (lambda () (setq display-line-numbers 'visual)))
   )
 
-(use-package ediff
+(use-package nlinum-relative
+  :ensure t
+  :when (version< emacs-version "26.0")
+  :hook ((prog-mode . nlinum-relative-mode)
+         (nlinum-relative-mode . nlinum-relative-setup-evil))
+  :config
+  (setq nlinum-relative-redisplay-delay 0.0))
+
+(use-package nlinum-hl
+  :ensure t
+  :when (version< emacs-version "26.0")
+  :after nlinum)
+
+;;;; Indentation
+
+(use-package aggressive-indent
+  :ensure t
+  :delight aggressive-indent-mode
+  :init
+  :hook (emacs-lisp-mode . aggressive-indent-mode)
+  :config
+  (mapc (lambda (command)
+          (add-to-list 'aggressive-indent-protected-commands command))
+        '(evil-paste-after
+          evil-paste-before
+          evil-visual-paste)))
+
+;;;; Completion
+
+(use-package company
+  :ensure t
+  :delight company-mode
+  :commands (company-mode company-indent-or-complete-common)
+  :hook (prog-mode . company-mode)
+  :general
+  (:keymaps '(company-active-map)
+   [tab] 'company-complete-common-or-cycle
+   [backtab] 'company-select-previous
+   "C-n" 'company-select-next
+   "C-p" 'company-select-previous))
+
+;;;; Helm
+
+(use-package helm
+  :ensure t
+  :defer t
+  :delight helm-mode
+  :init
+  (setq helm-mode-fuzzy-match t)
+  (setq helm-display-header-line nil)
+  (setq helm-split-window-inside-p t)
+  (setq helm-ff-kill-or-find-buffer-fname-fn 'ignore)
+  :config
+  (helm-mode 1)
+  (helm-autoresize-mode 1)
+
+  (set-face-attribute 'helm-source-header nil :height 1.0)
+
+  (defvar helm-side-position 'bottom
+    "Position to show the `helm' mini-buffer.")
+
+  (defvar helm-display-help-buffer-rule '("*.*Helm.*Help.**"))
+  (defvar helm-display-buffer-rule
+    `("*.*helm.**"
+      (display-buffer-in-side-window)
+      (inhibit-same-window . t)
+      (side . ,helm-side-position)
+      (window-width . 0.6)
+      (window-height . 0.4)))
+
+  (defun display-helm-window (buffer &optional resume)
+    "Sensible way to display the Helm window"
+    (let ((display-buffer-alist
+           (list helm-display-help-buffer-rule
+                 helm-display-buffer-rule)))
+      (helm-default-display-buffer buffer)))
+
+  (setq helm-display-function 'display-helm-window)
+
+  (defun hide-cursor-in-helm-buffer ()
+    "Hide the cursor in helm buffers."
+    (with-helm-buffer
+      (setq cursor-in-non-selected-windows nil)))
+  (add-hook 'helm-after-initialize-hook #'hide-cursor-in-helm-buffer)
+
+  ;; Raise garbage collection threshold while minibuffer is open
+  (defun minibuffer-setup-gc () (setq gc-cons-threshold 402653184
+                                      gc-cons-percentage 0.6))
+  (defun minibuffer-exit-gc () (setq gc-cons-threshold 800000
+                                     gc-cons-percentage 0.1))
+  (add-hook 'minibuffer-setup-hook #'minibuffer-setup-gc)
+  (add-hook 'minibuffer-exit-hook #'minibuffer-exit-gc)
+
+  :general
+  ("M-x" 'helm-M-x)
+  (:keymaps '(helm-map)
+   "TAB" 'helm-maybe-exit-minibuffer
+   "C-h" 'helm-next-source
+   "C-j" 'helm-next-line
+   "C-k" 'helm-previous-line
+   "C-l" 'helm-maybe-exit-minibuffer
+   "M-x" 'helm-select-action
+   "C-r" 'evil-paste-from-register)
+  (:states '(normal visual)
+   :prefix global-leader
+   "SPC" 'helm-M-x
+   "ff" 'helm-find-files
+   "fr" 'helm-recentf
+   "bb" 'helm-buffers-list
+   "ha" 'helm-apropos)
+
+  ;; Org-mode specific
+  (:states '(normal visual)
+   :keymaps '(org-mode-map)
+   :prefix major-mode-leader
+   "/" 'helm-org-in-buffer-headings))
+
+(use-package helm-files
+  :ensure nil
+  :defer t
+  :general
+  (:keymaps '(helm-find-files-map helm-read-file-map)
+   "TAB" 'helm-execute-persistent-action
+   "C-h" 'helm-find-files-up-one-level
+   "C-l" 'helm-execute-persistent-action
+   "C-r" 'evil-paste-from-register))
+
+(use-package helm-ag
+  :ensure t
+  :defer t
+  :commands (helm-ag
+             helm-ag-this-file
+             helm-do-ag
+             helm-do-ag-this-file
+             helm-ag-project-root
+             helm-do-ag-project-root
+             helm-ag-buffers
+             helm-do-ag-buffers
+             helm-ag-pop-stack
+             helm-ag-clear-stack)
+  :config
+  (setq helm-ag-base-command "rg --no-heading"))
+
+(use-package helm-descbinds
+  :ensure t
+  :defer t
+  :commands helm-descbinds)
+
+(use-package helm-swoop
+  :ensure t
+  :after helm
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "/" 'helm-swoop))
+
+;;;; Folding
+
+(use-package origami
+  :ensure t
+  :disabled
+  :commands origami-mode
+  :hook (prog-mode . origami-mode))
+
+;;;; Projects
+
+(use-package projectile
+  :ensure t
+  :defer t
+  :delight projectile-mode
+  :config
+  (when (eq system-type 'windows-nt)
+    (defun windows-command-coding (orig-fun &rest args)
+      "Fix the handling of the coding for external commands"
+      (let ((coding-system-for-read 'utf-8)
+            (coding-system-for-write 'utf-8))
+        (apply orig-fun args)))
+    (advice-add 'projectile-files-via-ext-command :around #'windows-command-coding))
+  (projectile-global-mode)
+  (setq projectile-enable-caching t)
+  (setq projectile-indexing-method 'alien)
+  (setq projectile-generic-command "fd . -0")
+  (setq projectile-svn-command 'projectile-generic-command))
+
+(use-package helm-projectile
+  :ensure t
+  :defer t
+  :general
+  (:states  '(normal visual)
+   :prefix global-leader
+   "pp" 'helm-projectile-switch-project
+   "pf" 'helm-projectile-find-file))
+
+;;;; Outline
+
+(use-package outshine
+  :ensure t
+  :defer t
+  :hook (emacs-lisp-mode . outshine-mode)
+  :commands outshine-mode)
+
+;;;; Fontification
+
+(use-package rainbow-mode
+  :ensure t
+  :delight rainbow-mode
+  :defer t
+  :config
+  (rainbow-mode 1))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :hook (prog-mode . rainbow-delimiters-mode)
+  :config)
+
+(use-package htmlfontify
+  :ensure t
+  :defer t
+  :config
+  ;; Fix IE not recognising correct encoding
+  (setq hfy-meta-tags
+        (format "<meta name=\"generator\" content=\"emacs %s; htmlfontify %0.2f\" charset=\"utf-8\" />"
+                emacs-version htmlfontify-version)))
+
+(use-package htmlize
+  :ensure t
+  :defer t)
+
+;;;; Version Control System
+
+(use-package magit
+  :ensure t
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "gs" 'magit-status))
+
+(use-package evil-magit
+  :after magit
+  :ensure t)
+
+(use-package git-gutter
+  :ensure t
+  :defer 1
+  :init
+  (setq git-gutter:update-interval 1)
+  :config
+  (global-git-gutter-mode +1)
+  :general
+  (:states '(normal visual)
+   "]c" 'git-gutter:next-hunk
+   "[c" 'git-gutter:previous-hunk))
+
+;;;; Miscelleneous
+
+(use-package autorevert
+  :ensure t
+  :defer t
+  :config
+  (setq auto-revert-interval 0.5)
+  (global-auto-revert-mode 1))
+
+(use-package simple
   :ensure nil
   :defer t
   :config
-  (setq ediff-window-setup-function 'ediff-setup-windows-plain))
+  (column-number-mode 1))
+
+(use-package openwith
+  :ensure t
+  :defer t
+  :config
+  (setq openwith-associations
+        (list
+         (list (openwith-make-extension-regexp
+                '("doc" "docx"))
+               "word"
+               '(file))
+         (list (openwith-make-extension-regexp
+                '("ppt" "pptx"))
+               "powerpoint"
+               '(file))
+         (list (openwith-make-extension-regexp
+                '("xls" "xlsx"))
+               "excel"
+               '(file))
+         ))
+  (openwith-mode 1))
+
+(use-package exec-path-from-shell
+  :ensure t
+  :defer 1
+  :config
+  (exec-path-from-shell-initialize))
+
+(use-package ffap
+  :ensure nil
+  :defer t
+  :config
+  ;; Don't try to ping things that look like domain names
+  (setq ffap-machine-p-known 'reject))
+
+(use-package terminal-here
+  :ensure t
+  :config
+  (defun terminal-here-default-terminal-command (_dir)
+    "Pick a good default command to use for DIR."
+    (cond
+     ((eq system-type 'darwin)
+      (list "open" "-a" "iTerm.app" "."))
+
+     ;; From http://stackoverflow.com/a/13509208/874671
+     ((memq system-type '(windows-nt ms-dos cygwin))
+      ;; (list "cmd.exe" "/C" "start" "nyagos.exe")
+      (list "cmd.exe" "/C" "start" "nyagos.exe"))
+
+     ;; Probably X11!
+     (t '("x-terminal-emulator"))))
+  (setq terminal-here-terminal-command 'terminal-here-default-terminal-command)
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "at" 'terminal-here-launch))
+
+(use-package tramp
+  :ensure t
+  :defer t)
+
+(use-package undo-tree
+  :ensure t
+  :delight undo-tree-mode
+  :defer t
+  :config
+  (setq undo-tree-auto-save-history t
+        undo-tree-enable-undo-in-region nil)
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "tu" 'undo-tree-visualize))
+
+(use-package eldoc
+  :ensure nil
+  :delight eldoc-mode)
+
+;; (use-package leuven-theme
+;;   :ensure t
+;;   :config
+;;   (load-theme 'leuven t))
 
 (use-package elec-pair
   :ensure nil
   :hook (prog-mode . electric-pair-mode))
 
-(use-package eldoc
+;; (use-package outorg
+;;   :ensure t
+;;   :defer t
+;;   :after org
+;;   :init
+;;   (defvar outline-minor-mode-prefix "\M-#"))
+
+(use-package paren
   :ensure nil
-  :delight eldoc-mode)
+  :hook (prog-mode . show-paren-mode))
+
+(use-package recentf
+  :ensure nil
+  :defer t
+  :after no-littering
+  :init
+  (add-hook 'find-file-hook (lambda () (unless recentf-mode
+                                         (recentf-mode))))
+  :config
+  (setq recentf-max-menu-items 100)
+  (add-to-list 'recentf-exclude no-littering-var-directory)
+  (add-to-list 'recentf-exclude no-littering-etc-directory))
+
+(use-package vlf
+  :ensure t
+  :defer t
+  :commands vlf-mode)
+
+;;;; Emacs lisp
 
 (use-package elisp-mode
   :ensure nil
@@ -704,261 +1292,92 @@ Lisp function does not specify a special indentation."
   (add-hook 'emacs-lisp-mode-hook
             (lambda () (setq-local lisp-indent-function #'emacs-lisp-indent-function))))
 
-(use-package evil
+(use-package lispy
   :ensure t
-  :demand
-  :init
-  (setq evil-want-keybinding nil)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-C-i-jump t)
-  (setq evil-want-Y-yank-to-eol t)
-  (setq evil-search-module 'evil-search)
+  :delight lispy-mode
+  :hook (emacs-lisp-mode . lispy-mode)
   :config
-  (evil-mode 1)
-  (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
+  (lispy-set-key-theme '(paredit c-digits)))
 
-  ;; esc quits
-  (defun minibuffer-keyboard-quit ()
-    "Abort recursive edit.
-In Delete Selection mode, if the mark is active, just deactivate it;
-then it takes a second \\[keyboard-quit] to abort the minibuffer."
-    (interactive)
-    (if (and delete-selection-mode transient-mark-mode mark-active)
-        (setq deactivate-mark  t)
-      (when (get-buffer "*Completions*") (delete-windows-on "*Completions*"))
-      (abort-recursive-edit)))
+(use-package lispyville
+  :ensure t
+  :delight lispyville-mode
+  :hook (lispy-mode . lispyville-mode))
 
+;;;; Org
+
+(use-package org
+  :ensure org-plus-contrib
+  :defer t
+  :preface
+  ;; (unless (file-expand-wildcards (concat package-user-dir "/org-[0-9]*"))
+  ;;   (package-install (elt (cdr (assoc 'org package-archive-contents)) 0)))
+  :init
+  :config
+  (setq org-directory "~/org")
+  (setq org-src-preserve-indentation nil
+        org-export-with-sub-superscripts nil
+        org-edit-src-content-indentation 0
+        org-src-fontify-natively t
+        org-src-tab-acts-natively t
+        org-hide-leading-stars t)
+  (add-to-list 'org-file-apps '("\\.xls\\'" . default))
+  (add-hook 'org-mode-hook (lambda () (modify-syntax-entry ?_ "w")))
+  (setq org-capture-templates
+        '(("n" "Notes" entry
+           (file "~/org/notes.org") "* %?\n")
+          ("t" "Todo" entry
+           (file "~/org/tasks.org") "* TODO %?\n SCHEDULED: %^t\n")))
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "|" "DONE(d)" "CANCELED(c)")))
+  (add-to-list
+   'org-src-lang-modes '("plantuml" . plantuml))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+     (emacs-lisp . t)
+     (calc . t)
+     (plantuml . t)
+     (shell . t)
+     (sql . t)))
   :general
-  ;; Exit out with ESC
-  (:states '(normal visual)
-   [escape] 'keyboard-quit)
-  (:keymaps '(minibuffer-local-map
-              minibuffer-local-ns-map
-              minibuffer-local-completion-map
-              minibuffer-local-must-match-map
-              minibuffer-local-isearch-map)
-   [escape] 'minibuffer-keyboard-quit)
-
-  ;; Disable selection marking with "C-SPC"
-  (:keymaps '(global)
-   "C-SPC" nil)
-
-  (:keymaps '(evil-ex-completion-map)
-   "C-b" 'backward-char
-   "C-a" 'beginning-of-line
-   "C-e" 'end-of-line
-   "C-k" 'kill-line)
-  
-  ;; Exit out of insert state with "jk"
-  (:states '(insert)
-   "j" (general-key-dispatch 'self-insert-command
-         :timeout 0.25
-         "k" 'evil-normal-state))
-
   (:states '(normal visual)
    :prefix global-leader
-   "tn" 'evil-ex-nohighlight))
-
-;; This package needs evil-want-keybinding set to nil on evil init
-(use-package evil-collection
-  :after evil
-  :ensure t
-  :demand
-  :config
-  (evil-collection-init))
-
-(use-package evil-anzu
-  :after evil
-  :ensure t
-  :defer t)
-
-(use-package evil-commentary
-  :after evil
-  :ensure t
-  :delight evil-commentary-mode
-  :hook (prog-mode . evil-commentary-mode))
-
-(use-package evil-ediff
-  :after evil
-  :ensure t
-  :after ediff
-  :defer t
-  :hook (ediff-mode . evil-ediff-init))
-
-(use-package evil-indent-plus
-  :after evil
-  :ensure t
-  :config
-  (evil-indent-plus-default-bindings))
-
-(use-package evil-surround
-  :after evil
-  :ensure t
-  :demand t
-  :config
-  (add-to-list 'evil-surround-operator-alist
-               '(lispyville-change . change))
-  (add-to-list 'evil-surround-operator-alist
-               '(lispyville-delete . delete))
-  (global-evil-surround-mode 1)
-  :general
-  (:states '(visual)
-   "s" 'evil-surround-region))
-
-(use-package evil-textobj-entire
-  :ensure t)
-
-(use-package evil-textobj-line
-  :ensure t)
-
-(use-package evil-visualstar
-  :ensure t
-  :defer t
-  :config
-  (global-evil-visualstar-mode))
-
-(use-package evil-org
-  :ensure t
-  :after org
-  :delight evil-org-mode
-  :hook ((org-mode . evil-org-mode)
-         (evil-org-mode . evil-org-set-key-theme))
-  :init
-  (setq evil-org-special-o/O '(table-row item))
-  ;; (setf evil-org-key-theme '(textobjects insert navigation additional shift todo heading))
-  (setf evil-org-key-theme '(navigation calendar additional shift return)))
-
-(use-package exec-path-from-shell
-  :ensure t
-  :defer 1
-  :config
-  (exec-path-from-shell-initialize))
-
-(use-package ffap
-  :ensure nil
-  :defer t
-  :config
-  ;; Don't try to ping things that look like domain names
-  (setq ffap-machine-p-known 'reject))
-
-(use-package flycheck
-  :ensure t
-  :disabled
-  :hook (prog-mode . flycheck-mode)
-  :config
-  (defun disable-fylcheck-in-org-src-block ()
-    (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
-  (add-hook 'org-src-mode-hook #'disable-fylcheck-in-org-src-block))
-
-(use-package flyspell
-  :ensure t
-  :defer t
-  :commands (flyspell-mode flyspell-buffer))
-
-(use-package helm
-  :ensure t
-  :defer t
-  :delight helm-mode
-  :init
-  (setq helm-mode-fuzzy-match t)
-  (setq helm-display-header-line nil)
-  (setq helm-split-window-inside-p t)
-  (setq helm-ff-kill-or-find-buffer-fname-fn 'ignore)
-  :config
-  (helm-mode 1)
-  (helm-autoresize-mode 1)
-
-  (set-face-attribute 'helm-source-header nil :height 1.0)
-
-  (defvar helm-side-position 'bottom
-    "Position to show the `helm' mini-buffer.")
-
-  (defvar helm-display-help-buffer-rule '("*.*Helm.*Help.**"))
-  (defvar helm-display-buffer-rule
-    `("*.*helm.**"
-      (display-buffer-in-side-window)
-      (inhibit-same-window . t)
-      (side . ,helm-side-position)
-      (window-width . 0.6)
-      (window-height . 0.4)))
-
-  (defun display-helm-window (buffer &optional resume)
-    "Sensible way to display the Helm window"
-    (let ((display-buffer-alist
-           (list helm-display-help-buffer-rule
-                 helm-display-buffer-rule)))
-      (helm-default-display-buffer buffer)))
-
-  (setq helm-display-function 'display-helm-window)
-
-  (defun hide-cursor-in-helm-buffer ()
-    "Hide the cursor in helm buffers."
-    (with-helm-buffer
-      (setq cursor-in-non-selected-windows nil)))
-  (add-hook 'helm-after-initialize-hook #'hide-cursor-in-helm-buffer)
-
-  ;; Raise garbage collection threshold while minibuffer is open
-  (defun minibuffer-setup-gc () (setq gc-cons-threshold 402653184
-                                      gc-cons-percentage 0.6))
-  (defun minibuffer-exit-gc () (setq gc-cons-threshold 800000
-                                     gc-cons-percentage 0.1))
-  (add-hook 'minibuffer-setup-hook #'minibuffer-setup-gc)
-  (add-hook 'minibuffer-exit-hook #'minibuffer-exit-gc)
-
-  :general
-  ("M-x" 'helm-M-x)
-  (:keymaps '(helm-map)
-   "TAB" 'helm-maybe-exit-minibuffer
-   "C-h" 'helm-next-source
-   "C-j" 'helm-next-line
-   "C-k" 'helm-previous-line
-   "C-l" 'helm-maybe-exit-minibuffer
-   "M-x" 'helm-select-action
-   "C-r" 'evil-paste-from-register)
-  (:states '(normal visual)
-   :prefix global-leader
-   "SPC" 'helm-M-x
-   "ff" 'helm-find-files
-   "fr" 'helm-recentf
-   "bb" 'helm-buffers-list
-   "ha" 'helm-apropos)
-
-  ;; Org-mode specific
+   "oc" 'org-capture)
+  (:states '(normal)
+   :keymaps '(org-mode-map)
+   "-" 'org-cycle-list-bullet
+   "<" 'org-metaleft
+   ">" 'org-metaright)
   (:states '(normal visual)
    :keymaps '(org-mode-map)
    :prefix major-mode-leader
-   "/" 'helm-org-in-buffer-headings))
+   "." 'org-time-stamp
+   "I" 'org-clock-in
+   "l" 'org-open-at-point
+   "O" 'org-clock-out
+   "vo" 'org-overview
+   "vc" 'org-content
+   "va" 'outline-show-all))
 
-(use-package helm-ag
+(use-package ob-sql-mode
   :ensure t
   :defer t
-  :commands (helm-ag
-             helm-ag-this-file
-             helm-do-ag
-             helm-do-ag-this-file
-             helm-ag-project-root
-             helm-do-ag-project-root
-             helm-ag-buffers
-             helm-do-ag-buffers
-             helm-ag-pop-stack
-             helm-ag-clear-stack)
-  :config
-  (setq helm-ag-base-command "rg --no-heading"))
+  :after org)
 
-(use-package helm-descbinds
-  :ensure t
-  :defer t
-  :commands helm-descbinds)
-
-(use-package helm-files
+(use-package ox-md
   :ensure nil
   :defer t
-  :general
-  (:keymaps '(helm-find-files-map helm-read-file-map)
-   "TAB" 'helm-execute-persistent-action
-   "C-h" 'helm-find-files-up-one-level
-   "C-l" 'helm-execute-persistent-action
-   "C-r" 'evil-paste-from-register))
+  :after org)
+
+(use-package org-bullets
+  :ensure t
+  :disabled
+  :hook (org-mode . org-bullets-mode))
+
+(use-package navi-mode
+  :ensure t
+  :defer t)
 
 (use-package helm-navi
   :ensure t
@@ -1021,23 +1440,6 @@ function to return a regular expression, or
                         "\\|"))
             ".*$")))
 
-(use-package helm-projectile
-  :ensure t
-  :defer t
-  :general
-  (:states  '(normal visual)
-   :prefix global-leader
-   "pp" 'helm-projectile-switch-project
-   "pf" 'helm-projectile-find-file))
-
-(use-package helm-swoop
-  :ensure t
-  :after helm
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "/" 'helm-swoop))
-
 (use-package helm-org-rifle
   :ensure t
   :general
@@ -1045,397 +1447,31 @@ function to return a regular expression, or
    :prefix global-leader
    "or" 'helm-org-rifle-org-directory))
 
-(use-package htmlfontify
+(use-package evil-org
   :ensure t
-  :defer t
-  :config
-  ;; Fix IE not recognising correct encoding
-  (setq hfy-meta-tags
-        (format "<meta name=\"generator\" content=\"emacs %s; htmlfontify %0.2f\" charset=\"utf-8\" />"
-                emacs-version htmlfontify-version)))
-
-(use-package htmlize
-  :ensure t
-  :defer t)
-
-(use-package ispell
-  :ensure t
-  :defer t)
-
-;; (use-package leuven-theme
-;;   :ensure t
-;;   :config
-;;   (load-theme 'leuven t))
-
-(use-package lispy
-  :ensure t
-  :delight lispy-mode
-  :hook (emacs-lisp-mode . lispy-mode)
-  :config
-  (lispy-set-key-theme '(paredit c-digits)))
-
-(use-package lispyville
-  :ensure t
-  :delight lispyville-mode
-  :hook (lispy-mode . lispyville-mode))
-
-(use-package magit
-  :ensure t
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "gs" 'magit-status))
-
-(use-package evil-magit
-  :after magit
-  :ensure t)
-
-(use-package git-gutter
-  :ensure t
-  :defer 1
+  :after org
+  :delight evil-org-mode
+  :hook ((org-mode . evil-org-mode)
+         (evil-org-mode . evil-org-set-key-theme))
   :init
-  (setq git-gutter:update-interval 1)
-  :config
-  (global-git-gutter-mode +1)
-  :general
-  (:states '(normal visual)
-   "]c" 'git-gutter:next-hunk
-   "[c" 'git-gutter:previous-hunk))
+  (setq evil-org-special-o/O '(table-row item))
+  ;; (setf evil-org-key-theme '(textobjects insert navigation additional shift todo heading))
+  (setf evil-org-key-theme '(navigation calendar additional shift return)))
 
-(use-package markdown-mode
-  :ensure t
-  :mode (("\\`README\\.md\\'" . gfm-mode)
-         ("\\.md\\'" . markdown-mode)
-         ("\\.markdown\\'" . markdown-mode)))
-
-(use-package navi-mode
-  :ensure t
-  :defer t)
-
-(use-package neotree
-  :ensure t
-  :disabled
-  :config
-  (setq neo-theme 'ascii)
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "tt" 'neotree-toggle))
-
-(use-package nlinum-relative
-  :ensure t
-  :when (version< emacs-version "26.0")
-  :hook ((prog-mode . nlinum-relative-mode)
-         (nlinum-relative-mode . nlinum-relative-setup-evil))
-  :config
-  (setq nlinum-relative-redisplay-delay 0.0))
-
-(use-package nlinum-hl
-  :ensure t
-  :when (version< emacs-version "26.0")
-  :after nlinum)
-
-(use-package ob-sql-mode
-  :ensure t
-  :defer t
-  :after org)
-
-(use-package openwith
-  :ensure t
-  :defer t
-  :config
-  (setq openwith-associations
-        (list
-         (list (openwith-make-extension-regexp
-                '("doc" "docx"))
-               "word"
-               '(file))
-         (list (openwith-make-extension-regexp
-                '("ppt" "pptx"))
-               "powerpoint"
-               '(file))
-         (list (openwith-make-extension-regexp
-                '("xls" "xlsx"))
-               "excel"
-               '(file))
-         ))
-  (openwith-mode 1))
-
-(use-package org
-  :ensure org-plus-contrib
-  :defer t
-  :preface
-  ;; (unless (file-expand-wildcards (concat package-user-dir "/org-[0-9]*"))
-  ;;   (package-install (elt (cdr (assoc 'org package-archive-contents)) 0)))
-  :init
-  :config
-  (setq org-directory "~/org")
-  (setq org-src-preserve-indentation nil
-        org-export-with-sub-superscripts nil
-        org-edit-src-content-indentation 0
-        org-src-fontify-natively t
-        org-src-tab-acts-natively t
-        org-hide-leading-stars t)
-  (add-to-list 'org-file-apps '("\\.xls\\'" . default))
-  (add-hook 'org-mode-hook (lambda () (modify-syntax-entry ?_ "w")))
-  (setq org-capture-templates
-        '(("n" "Notes" entry
-           (file "~/org/notes.org") "* %?\n")
-          ("t" "Todo" entry
-           (file "~/org/tasks.org") "* TODO %?\n SCHEDULED: %^t\n")))
-  (setq org-todo-keywords
-        '((sequence "TODO(t)" "|" "DONE(d)" "CANCELED(c)")))
-  (add-to-list
-   'org-src-lang-modes '("plantuml" . plantuml))
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((python . t)
-     (emacs-lisp . t)
-     (calc . t)
-     (plantuml . t)
-     (shell . t)
-     (sql . t)))
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "oc" 'org-capture)
-  (:states '(normal)
-   :keymaps '(org-mode-map)
-   "-" 'org-cycle-list-bullet
-   "<" 'org-metaleft
-   ">" 'org-metaright)
-  (:states '(normal visual)
-   :keymaps '(org-mode-map)
-   :prefix major-mode-leader
-   "." 'org-time-stamp
-   "I" 'org-clock-in
-   "l" 'org-open-at-point
-   "O" 'org-clock-out
-   "vo" 'org-overview
-   "vc" 'org-content
-   "va" 'outline-show-all))
-
-(use-package org-bullets
-  :ensure t
-  :disabled
-  :hook (org-mode . org-bullets-mode))
-
-(use-package origami
-  :ensure t
-  :disabled
-  :commands origami-mode
-  :hook (prog-mode . origami-mode))
-
-;; (use-package outorg
-;;   :ensure t
-;;   :defer t
-;;   :after org
-;;   :init
-;;   (defvar outline-minor-mode-prefix "\M-#"))
-
-(use-package outshine
-  :ensure t
-  :defer t
-  :hook (emacs-lisp-mode . outshine-mode)
-  :commands outshine-mode)
-
-(use-package ox-md
-  :ensure nil
-  :defer t
-  :after org)
-
-(use-package paren
-  :ensure nil
-  :hook (prog-mode . show-paren-mode))
-
-(use-package plantuml-mode
-  :ensure t
-  :defer t
-  :mode (("\\.pu\\'" . plantuml-mode)
-         ("\\.plantuml\\'" . plantuml-mode)))
-
-(use-package projectile
-  :ensure t
-  :defer t
-  :delight projectile-mode
-  :config
-  (when (eq system-type 'windows-nt)
-    (defun windows-command-coding (orig-fun &rest args)
-      "Fix the handling of the coding for external commands"
-      (let ((coding-system-for-read 'utf-8)
-            (coding-system-for-write 'utf-8))
-        (apply orig-fun args)))
-    (advice-add 'projectile-files-via-ext-command :around #'windows-command-coding))
-  (projectile-global-mode)
-  (setq projectile-enable-caching t)
-  (setq projectile-indexing-method 'alien)
-  (setq projectile-generic-command "fd . -0")
-  (setq projectile-svn-command 'projectile-generic-command))
-
-(use-package rainbow-mode
-  :ensure t
-  :delight rainbow-mode
-  :defer t
-  :config
-  (rainbow-mode 1))
-
-(use-package rainbow-delimiters
-  :ensure t
-  :hook (prog-mode . rainbow-delimiters-mode)
-  :config)
-
-(use-package ranger
-  :ensure t
-  :disabled
-  :defer t
-  :config
-  (ranger-override-dired-mode t)
-  (setq ranger-cleanup-eagerly t)
-  :general
-  ;; (:keymaps '(normal)
-  ;;  "-" 'deer)
-  (:states '(normal visual)
-   :prefix global-leader
-   "ar" 'ranger
-   "ad" 'deer))
-
-(use-package recentf
-  :ensure nil
-  :defer t
-  :after no-littering
-  :init
-  (add-hook 'find-file-hook (lambda () (unless recentf-mode
-                                         (recentf-mode))))
-  :config
-  (setq recentf-max-menu-items 100)
-  (add-to-list 'recentf-exclude no-littering-var-directory)
-  (add-to-list 'recentf-exclude no-littering-etc-directory))
-
-(use-package rg
-  :ensure t
-  :commands (rg))
-
-(use-package shackle
-  :ensure t
-  :defer t
-  :config
-  (setq shackle-default-alignment 'below
-        shackle-default-size 8
-        shackle-rules '(("*compilation*" :size 0.25 :noselect t)
-                        ("*info*" :size 0.5 :select t)
-                        ("*Backtrace*" :size 20 :noselect t)
-                        ("*Warnings*"  :size 12 :noselect t :autofit t)
-                        ("*Messages*"  :size 12 :noselect t)
-                        ("*Help*" :size 0.4)
-                        (apropos-mode :size 0.3)))
-  (shackle-mode 1))
-
-(use-package simple
-  :ensure nil
-  :defer t
-  :config
-  (column-number-mode 1))
-
-(use-package sql-indent
-  :ensure t
-  :defer t)
-
-(use-package terminal-here
-  :ensure t
-  :config
-  (defun terminal-here-default-terminal-command (_dir)
-    "Pick a good default command to use for DIR."
-    (cond
-     ((eq system-type 'darwin)
-      (list "open" "-a" "iTerm.app" "."))
-
-     ;; From http://stackoverflow.com/a/13509208/874671
-     ((memq system-type '(windows-nt ms-dos cygwin))
-      ;; (list "cmd.exe" "/C" "start" "nyagos.exe")
-      (list "cmd.exe" "/C" "start" "nyagos.exe"))
-
-     ;; Probably X11!
-     (t '("x-terminal-emulator"))))
-  (setq terminal-here-terminal-command 'terminal-here-default-terminal-command)
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "at" 'terminal-here-launch))
+;;;; Text
 
 (use-package text-mode
   :ensure nil
   :init
   (setq-default major-mode 'text-mode))
 
-(use-package tramp
+;;;; SQL
+
+(use-package sql-indent
   :ensure t
   :defer t)
 
-(use-package treemacs
-  :ensure t
-  :defer t
-  :disabled
-  :config
-  (setq treemacs-collapse-dirs              (if (executable-find "python") 3 0)
-        treemacs-deferred-git-apply-delay   0.5
-        treemacs-display-in-side-window     t
-        treemacs-file-event-delay           5000
-        treemacs-file-follow-delay          0.2
-        treemacs-follow-after-init          t
-        treemacs-follow-recenter-distance   0.1
-        treemacs-git-command-pipe           ""
-        treemacs-goto-tag-strategy          'refetch-index
-        treemacs-indentation                2
-        treemacs-indentation-string         " "
-        treemacs-is-never-other-window      nil
-        treemacs-max-git-entries            5000
-        treemacs-no-png-images              t
-        treemacs-no-delete-other-windows    t
-        treemacs-project-follow-cleanup     nil
-        treemacs-persist-file               (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
-        treemacs-recenter-after-file-follow nil
-        treemacs-recenter-after-tag-follow  nil
-        treemacs-show-cursor                nil
-        treemacs-show-hidden-files          t
-        treemacs-silent-filewatch           nil
-        treemacs-silent-refresh             nil
-        treemacs-sorting                    'alphabetic-desc
-        treemacs-space-between-root-nodes   t
-        treemacs-tag-follow-cleanup         t
-        treemacs-tag-follow-delay           1.5
-        treemacs-width                      35)
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "tn" 'treemacs))
-
-(use-package treemacs-evil
-  :after treemacs evil
-  :ensure t
-  :disabled)
-
-(use-package undo-tree
-  :ensure t
-  :delight undo-tree-mode
-  :defer t
-  :config
-  (setq undo-tree-auto-save-history t
-        undo-tree-enable-undo-in-region nil)
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "tu" 'undo-tree-visualize))
-
-(use-package vdiff
-  :ensure t
-  :defer t
-  :config
-  (setq vdiff-auto-refine t))
-
-(use-package vlf
-  :ensure t
-  :defer t
-  :commands vlf-mode)
+;;;; Web
 
 (use-package web-mode
   :ensure t
@@ -1452,3 +1488,19 @@ function to return a regular expression, or
   (setq-default web-mode-markup-indent-offset tab-width
                 web-mode-css-indent-offset tab-width
                 web-mode-code-indent-offset tab-width))
+
+;;;; Markdown
+
+(use-package markdown-mode
+  :ensure t
+  :mode (("\\`README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode)))
+
+;;;; Plantuml
+
+(use-package plantuml-mode
+  :ensure t
+  :defer t
+  :mode (("\\.pu\\'" . plantuml-mode)
+         ("\\.plantuml\\'" . plantuml-mode)))
