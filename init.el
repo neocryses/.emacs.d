@@ -486,6 +486,20 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (global-evil-visualstar-mode))
 
+;;;; Indentation
+
+(use-package aggressive-indent
+  :ensure t
+  :delight aggressive-indent-mode
+  :init
+  :hook (emacs-lisp-mode . aggressive-indent-mode)
+  :config
+  (mapc (lambda (command)
+          (add-to-list 'aggressive-indent-protected-commands command))
+        '(evil-paste-after
+          evil-paste-before
+          evil-visual-paste)))
+
 ;;;; Searching
 
 (use-package anzu
@@ -500,16 +514,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package rg
   :ensure t
   :commands (rg))
-
-;;;; Navigation
-
-(use-package avy
-  :ensure t
-  :commands avy-goto-char
-  :general
-  (:states '(normal visual)
-   :prefix global-leader
-   "ss" 'avy-goto-char))
 
 ;;;; Window management
 
@@ -527,26 +531,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
                         ("*Help*" :size 0.4)
                         (apropos-mode :size 0.3)))
   (shackle-mode 1))
-
-;;;; Linting
-
-(use-package flycheck
-  :disabled
-  :ensure t
-  :hook (prog-mode . flycheck-mode)
-  :config
-  (defun disable-fylcheck-in-org-src-block ()
-    (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
-  (add-hook 'org-src-mode-hook #'disable-fylcheck-in-org-src-block))
-
-(use-package flyspell
-  :ensure t
-  :defer t
-  :commands (flyspell-mode flyspell-buffer))
-
-(use-package ispell
-  :ensure t
-  :defer t)
 
 ;;;; Diff
 
@@ -839,19 +823,13 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :when (version< emacs-version "26.0")
   :after nlinum)
 
-;;;; Indentation
+;;;; Folding
 
-(use-package aggressive-indent
+(use-package origami
   :ensure t
-  :delight aggressive-indent-mode
-  :init
-  :hook (emacs-lisp-mode . aggressive-indent-mode)
-  :config
-  (mapc (lambda (command)
-          (add-to-list 'aggressive-indent-protected-commands command))
-        '(evil-paste-after
-          evil-paste-before
-          evil-visual-paste)))
+  :disabled
+  :commands origami-mode
+  :hook (prog-mode . origami-mode))
 
 ;;;; Completion
 
@@ -866,6 +844,26 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    [backtab] 'company-select-previous
    "C-n" 'company-select-next
    "C-p" 'company-select-previous))
+
+;;;; Linting
+
+(use-package flycheck
+  :disabled
+  :ensure t
+  :hook (prog-mode . flycheck-mode)
+  :config
+  (defun disable-fylcheck-in-org-src-block ()
+    (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+  (add-hook 'org-src-mode-hook #'disable-fylcheck-in-org-src-block))
+
+(use-package flyspell
+  :ensure t
+  :defer t
+  :commands (flyspell-mode flyspell-buffer))
+
+(use-package ispell
+  :ensure t
+  :defer t)
 
 ;;;; Helm
 
@@ -982,13 +980,15 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :prefix global-leader
    "/" 'helm-swoop))
 
-;;;; Folding
+;;;; Navigation
 
-(use-package origami
+(use-package avy
   :ensure t
-  :disabled
-  :commands origami-mode
-  :hook (prog-mode . origami-mode))
+  :commands avy-goto-char
+  :general
+  (:states '(normal visual)
+   :prefix global-leader
+   "ss" 'avy-goto-char))
 
 ;;;; Projects
 
