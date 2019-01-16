@@ -169,6 +169,16 @@ Fundamental-mode, and disable the undo"
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 
+;;;; Server
+
+(use-package server
+  :ensure nil
+  :disabled
+  :when (eq system-type 'windows-nt)
+  :delight server-mode
+  :unless (or noninteractive)
+  :hook (after-init . server-start))
+
 ;;;; Settings
 
 ;; Set the startup behavior
@@ -242,6 +252,10 @@ Fundamental-mode, and disable the undo"
   (add-hook 'evil-insert-state-entry-hook
             #'disable-redisplay-dont-pause)
   (add-hook 'evil-insert-state-exit-hook
+            #'enable-redisplay-dont-pause)
+  (add-hook 'minibuffer-setup-hook
+            #'disable-redisplay-dont-pause)
+  (add-hook 'minibuffer-exit-hook
             #'enable-redisplay-dont-pause))
 
 ;; (when (eq system-type 'darwin)
@@ -266,30 +280,31 @@ Fundamental-mode, and disable the undo"
 (defun set-font (&optional frame)
   (when frame
     (select-frame frame))
-  (let* ((font-family "Operator Mono SSm")
-         (font-size 11)
-         (font-height (* font-size 10))
-         (jp-font-family "Ricty Discord"))
-    (set-face-attribute 'default nil :family font-family :height font-height)
-    (let ((name (frame-parameter nil 'font))
-          (font-spec (font-spec :family font-family))
-          (characters '((?\u00A0 . ?\u00FF) ; Latin-1
-                        (?\u0100 . ?\u017F) ; Latin Extended-A
-                        (?\u0180 . ?\u024F) ; Latin Extended-B
-                        (?\u0250 . ?\u02AF) ; IPA Extensions
-                        (?\u0370 . ?\u03FF))) ; Greek and Coptic
-          (jp-font-spec (font-spec :family jp-font-family))
-          (jp-characters '(katakana-jisx0201
-                           cp932-2-byte
-                           japanese-jisx0212
-                           japanese-jisx0213-2
-                           japanese-jisx0213.2004-1))) 
-      (dolist (character characters)
-        (set-fontset-font name character font-spec))
-      (dolist (jp-character jp-characters)
-        (set-fontset-font name jp-character jp-font-spec))
-      (add-to-list 'face-font-rescale-alist (cons jp-font-family 1.3)))))
-(set-font)
+  (when (display-graphic-p)
+    (let* ((font-family "Operator Mono SSm")
+           (font-size 11)
+           (font-height (* font-size 10))
+           (jp-font-family "Ricty Discord"))
+      (set-face-attribute 'default nil :family font-family :height font-height)
+      (let ((name (frame-parameter nil 'font))
+            (font-spec (font-spec :family font-family))
+            (characters '((?\u00A0 . ?\u00FF) ; Latin-1
+                          (?\u0100 . ?\u017F) ; Latin Extended-A
+                          (?\u0180 . ?\u024F) ; Latin Extended-B
+                          (?\u0250 . ?\u02AF) ; IPA Extensions
+                          (?\u0370 . ?\u03FF))) ; Greek and Coptic
+            (jp-font-spec (font-spec :family jp-font-family))
+            (jp-characters '(katakana-jisx0201
+                             cp932-2-byte
+                             japanese-jisx0212
+                             japanese-jisx0213-2
+                             japanese-jisx0213.2004-1))) 
+        (dolist (character characters)
+          (set-fontset-font name character font-spec))
+        (dolist (jp-character jp-characters)
+          (set-fontset-font name jp-character jp-font-spec))
+        (add-to-list 'face-font-rescale-alist (cons jp-font-family 1.3))))))
+(add-hook 'after-init-hook #'set-font)
 (add-hook 'after-make-frame-functions #'set-font)
 
 ;;;;; Version 4
@@ -399,6 +414,31 @@ Fundamental-mode, and disable the undo"
   (evil-mode 1)
   (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
 
+
+  (evil-define-command evil-ex-vresize (arg)
+    "The ex :vresize command.
+
+If ARG is a signed positive integer, increase the current window
+width by ARG.
+
+If ARG is a signed negative integer, decrease the current window
+width by ARG.
+
+If ARG is a positive integer without explicit sign, set the current
+window width to ARG.
+
+If ARG is empty, maximize the current window width."
+    (interactive "<a>")
+    (if (or (not arg) (= 0 (length arg)))
+        (evil-window-set-width nil)
+      (let ((n (string-to-number arg)))
+        (if (> n 0)
+            (if (= ?+ (aref arg 0))
+                (evil-window-increase-width n)
+              (evil-window-set-width n))
+          (evil-window-decrease-width (- n))))))
+  (evil-ex-define-cmd "vres[ize]" 'evil-ex-vresize)
+
   ;; esc quits
   (defun minibuffer-keyboard-quit ()
     "Abort recursive edit.
@@ -499,7 +539,9 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
           (add-to-list 'aggressive-indent-protected-commands command))
         '(evil-paste-after
           evil-paste-before
-          evil-visual-paste)))
+          evil-visual-paste))
+  (add-to-list 'aggressive-indent-excluded-modes 'ediff-mode)
+  (add-to-list 'aggressive-indent-excluded-modes 'vdiff-mode))
 
 ;;;; Searching
 
@@ -520,7 +562,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package shackle
   :ensure t
-  :defer t
+  :defer .3
   :config
   (setq shackle-default-alignment 'below
         shackle-default-size 8
@@ -529,7 +571,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
                         ("*Backtrace*" :size 20 :noselect t)
                         ("*Warnings*"  :size 12 :noselect t :autofit t)
                         ("*Messages*"  :size 12 :noselect t)
-                        ("*Help*" :size 0.4)
+                        ("*Help*" :size 20)
                         (apropos-mode :size 0.3)))
   (shackle-mode 1))
 
@@ -806,10 +848,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
          (markdown-mode . (lambda () (setq display-line-numbers 'visual))))
   :init
   (setq display-line-numbers-grow-only t
-        display-line-numbers-type 'relative)
-  ;; (add-hook 'org-mode-hook
-  ;;           (lambda () (setq display-line-numbers 'visual)))
-  )
+        display-line-numbers-type 'relative))
 
 (use-package nlinum-relative
   :ensure t
@@ -870,7 +909,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package helm
   :ensure t
-  :defer t
+  :defer .3
   :delight helm-mode
   :init
   (setq helm-mode-fuzzy-match t)
@@ -911,10 +950,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (add-hook 'helm-after-initialize-hook #'hide-cursor-in-helm-buffer)
 
   ;; Raise garbage collection threshold while minibuffer is open
-  (defun minibuffer-setup-gc () (setq gc-cons-threshold 402653184
-                                      gc-cons-percentage 0.6))
-  (defun minibuffer-exit-gc () (setq gc-cons-threshold 800000
-                                     gc-cons-percentage 0.1))
+  (defun minibuffer-setup-gc ()
+    (setq gc-cons-threshold 402653184
+          gc-cons-percentage 0.6))
+  (defun minibuffer-exit-gc ()
+    (setq gc-cons-threshold 800000
+          gc-cons-percentage 0.1))
   (add-hook 'minibuffer-setup-hook #'minibuffer-setup-gc)
   (add-hook 'minibuffer-exit-hook #'minibuffer-exit-gc)
 
@@ -945,7 +986,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package helm-files
   :ensure nil
-  :defer t
+  :defer .3
   :general
   (:keymaps '(helm-find-files-map helm-read-file-map)
    "TAB" 'helm-execute-persistent-action
@@ -955,7 +996,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package helm-ag
   :ensure t
-  :defer t
+  :defer .3
   :commands (helm-ag
              helm-ag-this-file
              helm-do-ag
@@ -971,12 +1012,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package helm-descbinds
   :ensure t
-  :defer t
+  :defer .3
   :commands helm-descbinds)
 
 (use-package helm-swoop
   :ensure t
-  :after helm
+  :defer .3
   :general
   (:states '(normal visual)
    :prefix global-leader
@@ -986,6 +1027,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package avy
   :ensure t
+  :defer t
   :commands avy-goto-char
   :general
   (:states '(normal visual)
@@ -1098,7 +1140,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package openwith
   :ensure t
-  :defer t
+  :defer .3
   :config
   (setq openwith-associations
         (list
@@ -1119,6 +1161,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package exec-path-from-shell
   :ensure t
+  :when (eq system-type 'darwin)
   :defer 1
   :config
   (exec-path-from-shell-initialize))
@@ -1161,7 +1204,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :delight undo-tree-mode
   :defer t
   :config
-  (setq undo-tree-auto-save-history t
+  (setq undo-tree-auto-save-history nil
         undo-tree-enable-undo-in-region nil)
   :general
   (:states '(normal visual)
@@ -1310,7 +1353,7 @@ Lisp function does not specify a special indentation."
 
 (use-package org
   :ensure org-plus-contrib
-  :defer t
+  :defer .3
   :preface
   ;; (unless (file-expand-wildcards (concat package-user-dir "/org-[0-9]*"))
   ;;   (package-install (elt (cdr (assoc 'org package-archive-contents)) 0)))
@@ -1456,7 +1499,7 @@ function to return a regular expression, or
   :hook ((org-mode . evil-org-mode)
          (evil-org-mode . evil-org-set-key-theme))
   :init
-  (setq evil-org-special-o/O '(table-row item))
+  (setq evil-org-special-o/O nil)
   ;; (setf evil-org-key-theme '(textobjects insert navigation additional shift todo heading))
   (setf evil-org-key-theme '(navigation calendar additional shift return)))
 
@@ -1470,6 +1513,7 @@ function to return a regular expression, or
 ;;;; SQL
 
 (use-package sql-indent
+  :disabled
   :ensure t
   :defer t)
 
