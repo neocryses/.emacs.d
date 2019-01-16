@@ -566,12 +566,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (setq shackle-default-alignment 'below
         shackle-default-size 8
-        shackle-rules '(("*compilation*" :size 0.25 :noselect t)
+        shackle-rules '(("*compilation*" :size 0.25 :select nil)
                         ("*info*" :size 0.5 :select t)
-                        ("*Backtrace*" :size 20 :noselect t)
-                        ("*Warnings*"  :size 12 :noselect t :autofit t)
-                        ("*Messages*"  :size 12 :noselect t)
-                        ("*Help*" :size 20)
+                        ("*Backtrace*" :size 20 :select nil)
+                        ("*Warnings*"  :size 12 :select nil :autofit t)
+                        ("*Messages*"  :size 12 :select nil)
+                        ("*Help*" :size 20 :select t)
                         (apropos-mode :size 0.3)))
   (shackle-mode 1))
 
