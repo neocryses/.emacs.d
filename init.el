@@ -130,12 +130,27 @@ Fundamental-mode, and disable the undo"
 
 (use-package hydra
   :ensure t
-  :defer t
+  :defer .3
   :config
-  (defhydra hydra-zoom (global-map "<f2>")
-    "zoom"
-    ("g" text-scale-increase "in")
-    ("l" text-scale-decrease "out")))
+  ;; (defhydra hydra-zoom (global-map "<f2>")
+  ;;   "zoom"
+  ;;   ("g" text-scale-increase "in")
+  ;;   ("l" text-scale-decrease "out"))
+
+  (defhydra hydra-zoom (:color pink
+                        :hint nil)
+    "
+_+_: in
+_-_: out
+"
+    ("+" text-scale-increase)
+    ("-" text-scale-decrease)
+    ("q" nil "cancel"))
+  :general
+  (:states '(normal visual)
+   :keymaps '(override)
+   :prefix global-leader
+   "z" 'hydra-zoom/body))
 
 ;;;; Cp5022x
 
