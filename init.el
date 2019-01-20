@@ -402,6 +402,10 @@ Fundamental-mode, and disable the undo"
   (evil-mode 1)
   (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
 
+  (evil-define-text-object evil-entire-entire-buffer (count &optional beg end type)
+    "Select entire buffer"
+    (evil-range (point-min) (point-max)))
+
   ;; Temporary fix for screen blinking while inserting text with ime for macOS
   (when (eq system-type 'darwin)
     (defun enable-redisplay-dont-pause ()
@@ -497,6 +501,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "C-a" 'beginning-of-line
    "C-e" 'end-of-line
    "C-k" 'kill-line)
+
+  (:keymaps '(evil-outer-text-objects-map)
+   "e" 'evil-entire-entire-buffer)
+
+  (:keymaps '(evil-inner-text-objects-map)
+   "e" 'evil-entire-entire-buffer)
   
   ;; Exit out of insert state with "jk"
   (:states '(insert)
@@ -543,6 +553,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "s" 'evil-surround-region))
 
 (use-package evil-textobj-entire
+  :disabled
   :ensure t)
 
 (use-package evil-textobj-line
