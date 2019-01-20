@@ -21,6 +21,16 @@
 
 ;;; Core configuration
 
+;;;; Constants
+
+(defconst *is-win* (memq system-type '(windows-nt ms-dos)))
+(defconst *is-mac* (eq system-type 'darwin)) 
+
+;;;; Variables
+
+(defvar work-computer-list '("pn1v94")
+  "List of work computers")
+
 ;;;; Package management
 
 ;;;;; Package.el
@@ -60,12 +70,6 @@
                                 text-read-only)))
     (command-error-default-function data context signal)))
 (setq command-error-function 'supress-error)
-
-(defun supress-message (orig-fun &rest args)
-  "Fix the handling of the coding for external commands"
-  (let ((inhibit-message t))
-    (apply orig-fun args)))
-(advice-add 'push-mark :around #'supress-message)
 
 ;;;; Dealing with very large files
 
@@ -241,23 +245,6 @@ Fundamental-mode, and disable the undo"
 (setq minibuffer-prompt-properties
       '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
 
-;; Temporary fix for screen blinking while inserting text with ime for macOS
-(when (eq system-type 'darwin)
-  (defun enable-redisplay-dont-pause ()
-    "Set the value of redisplay-dont-pause to t."
-    (setq redisplay-dont-pause t))
-  (defun disable-redisplay-dont-pause ()
-    "Set the value of redisplay-dont-pause to nil."
-    (setq redisplay-dont-pause nil))
-  (add-hook 'evil-insert-state-entry-hook
-            #'disable-redisplay-dont-pause)
-  (add-hook 'evil-insert-state-exit-hook
-            #'enable-redisplay-dont-pause)
-  (add-hook 'minibuffer-setup-hook
-            #'disable-redisplay-dont-pause)
-  (add-hook 'minibuffer-exit-hook
-            #'enable-redisplay-dont-pause))
-
 ;; (when (eq system-type 'darwin)
 ;;   (setq mac-option-modifier 'meta
 ;;         mac-command-modifier 'super))
@@ -409,11 +396,34 @@ Fundamental-mode, and disable the undo"
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-i-jump t)
   (setq evil-want-Y-yank-to-eol t)
+  (setq evil-auto-balance-windows nil)
   (setq evil-search-module 'evil-search)
   :config
   (evil-mode 1)
   (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
 
+  ;; Temporary fix for screen blinking while inserting text with ime for macOS
+  (when (eq system-type 'darwin)
+    (defun enable-redisplay-dont-pause ()
+      "Set the value of redisplay-dont-pause to t."
+      (setq redisplay-dont-pause t))
+    (defun disable-redisplay-dont-pause ()
+      "Set the value of redisplay-dont-pause to nil."
+      (setq redisplay-dont-pause nil))
+    (add-hook 'evil-insert-state-entry-hook
+              #'disable-redisplay-dont-pause)
+    (add-hook 'evil-insert-state-exit-hook
+              #'enable-redisplay-dont-pause)
+    (add-hook 'minibuffer-setup-hook
+              #'disable-redisplay-dont-pause)
+    (add-hook 'minibuffer-exit-hook
+              #'enable-redisplay-dont-pause))
+
+  (defun supress-message (orig-fun &rest args)
+    "Fix the handling of the coding for external commands"
+    (let ((inhibit-message t))
+      (apply orig-fun args)))
+  (advice-add 'push-mark :around #'supress-message)
 
   (evil-define-command evil-ex-vresize (arg)
     "The ex :vresize command.
@@ -438,6 +448,23 @@ If ARG is empty, maximize the current window width."
               (evil-window-set-width n))
           (evil-window-decrease-width (- n))))))
   (evil-ex-define-cmd "vres[ize]" 'evil-ex-vresize)
+
+  (defmacro define-and-bind-quoted-text-object (name key start-regex end-regex)
+    (let ((inner-name (make-symbol (concat "evil-inner-" name)))
+          (outer-name (make-symbol (concat "evil-a-" name))))
+      `(progn
+         (evil-define-text-object ,inner-name (count &optional beg end type)
+           (evil-select-paren ,start-regex ,end-regex beg end type count nil))
+         (evil-define-text-object ,outer-name (count &optional beg end type)
+           (evil-select-paren ,start-regex ,end-regex beg end type count t))
+         (define-key evil-inner-text-objects-map ,key #',inner-name)
+         (define-key evil-outer-text-objects-map ,key #',outer-name))))
+
+  (define-and-bind-quoted-text-object "plus" "+" "+" "+")
+  (define-and-bind-quoted-text-object "pipe" "|" "|" "|")
+  (define-and-bind-quoted-text-object "slash" "/" "/" "/")
+  (define-and-bind-quoted-text-object "asterisk" "*" "*" "*")
+  (define-and-bind-quoted-text-object "dollar" "$" "\\$" "\\$") ;; sometimes your have to escape the regex
 
   ;; esc quits
   (defun minibuffer-keyboard-quit ()
@@ -571,7 +598,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
                         ("*Backtrace*" :size 20 :select nil)
                         ("*Warnings*"  :size 12 :select nil :autofit t)
                         ("*Messages*"  :size 12 :select nil)
-                        ("*Help*" :size 20 :select t)
+                        ("*Help*" :same t :inhibit-window-quit t :size 20 :select t)
                         (apropos-mode :size 0.3)))
   (shackle-mode 1))
 
@@ -776,7 +803,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t
   :config
   (ranger-override-dired-mode t)
-  (setq ranger-cleanup-eagerly t)
+  (setq ranger-cleanup-eagerly nil)
   :general
   ;; (:keymaps '(normal)
   ;;  "-" 'deer)
@@ -1132,6 +1159,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq auto-revert-interval 0.5)
   (global-auto-revert-mode 1))
 
+(use-package files
+  :ensure nil
+  :config
+  (when (member (system-name) work-computer-list)
+    (setq require-final-newline nil)))
+
 (use-package simple
   :ensure nil
   :defer t
@@ -1240,6 +1273,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t
   :after no-littering
   :init
+  (setq recentf-max-menu-items 100)
   (add-hook 'find-file-hook (lambda () (unless recentf-mode
                                          (recentf-mode))))
   :config
