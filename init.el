@@ -91,8 +91,7 @@ Fundamental-mode, and disable the undo"
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
-(use-package esup
-  :ensure t)
+(use-package esup :ensure t)
 
 ;;;; Delight
 
@@ -110,7 +109,7 @@ Fundamental-mode, and disable the undo"
 
 (use-package which-key
   :ensure t
-  :defer 1
+  :defer .3
   :delight which-key-mode
   :commands which-key-mode
   :config
