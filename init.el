@@ -25,6 +25,7 @@
 
 (defconst *is-win* (memq system-type '(windows-nt ms-dos)))
 (defconst *is-mac* (eq system-type 'darwin)) 
+(defconst *is-linux* (eq system-type 'gnu/linux)) 
 
 ;;;; Variables
 
@@ -146,11 +147,34 @@ _-_: out
     ("+" text-scale-increase)
     ("-" text-scale-decrease)
     ("q" nil "cancel"))
+
+  (defhydra hydra-windows (:color pink
+                           :hint nil)
+    "
+_h_: move left   _H_: move window left  _<_: Decrease width
+_j_: move down   _J_: move window down  _>_: Increase width
+_k_: move up     _K_: move window up    _-_: Decrease height
+_l_: move right  _L_: move window right _+_: Increase height
+"
+    ("h" evil-window-left)
+    ("j" evil-window-down)
+    ("k" evil-window-up)
+    ("l" evil-window-right)
+    ("H" evil-window-move-far-left)
+    ("J" evil-window-move-very-bottom)
+    ("K" evil-window-move-very-top)
+    ("L" evil-window-move-far-right)
+    ("<" evil-window-decrease-width)
+    (">" evil-window-increase-width)
+    ("-" evil-window-decrease-height)
+    ("+" evil-window-increase-height)
+    ("q" nil "cancel"))
   :general
   (:states '(normal visual)
    :keymaps '(override)
    :prefix global-leader
-   "z" 'hydra-zoom/body))
+   "z" 'hydra-zoom/body
+   "w." 'hydra-windows/body))
 
 ;;;; Cp5022x
 
@@ -192,7 +216,7 @@ _-_: out
 (use-package server
   :ensure nil
   :disabled
-  :when (eq system-type 'windows-nt)
+  :when *is-win*
   :delight server-mode
   :unless (or noninteractive)
   :hook (after-init . server-start))
@@ -278,33 +302,56 @@ _-_: out
 
 ;;;;; Version 5
 
+(defvar default-font-family nil
+  "Font to be used for English characters")
+
+(defvar ja-default-font-family nil
+  "Font to be used for Japanese characters")
+
+(defvar default-font-size nil
+  "Default font size")
+
+(defvar ja-default-font-rescale nil
+  "Rescaling value for Japanese characters")
+
+(cond (*is-win*
+       (setq default-font-family "Myrica M"
+             default-font-size 10
+             ja-default-font-family default-font-family
+             ja-default-font-rescale "1.0"))
+      (*is-mac*
+       (setq default-font-family "Operator Mono SSm"
+             default-font-size 11
+             ja-default-font-family "Ricty Discord"
+             ja-default-font-rescale "1.3")))
+
 (defun set-font (&optional frame)
   (when frame
     (select-frame frame))
   (when (display-graphic-p)
-    (let* ((font-family "Operator Mono SSm")
-           (font-size 11)
-           (font-height (* font-size 10))
-           (jp-font-family "Ricty Discord"))
-      (set-face-attribute 'default nil :family font-family :height font-height)
-      (let ((name (frame-parameter nil 'font))
-            (font-spec (font-spec :family font-family))
-            (characters '((?\u00A0 . ?\u00FF) ; Latin-1
-                          (?\u0100 . ?\u017F) ; Latin Extended-A
-                          (?\u0180 . ?\u024F) ; Latin Extended-B
-                          (?\u0250 . ?\u02AF) ; IPA Extensions
-                          (?\u0370 . ?\u03FF))) ; Greek and Coptic
-            (jp-font-spec (font-spec :family jp-font-family))
-            (jp-characters '(katakana-jisx0201
-                             cp932-2-byte
-                             japanese-jisx0212
-                             japanese-jisx0213-2
-                             japanese-jisx0213.2004-1))) 
-        (dolist (character characters)
-          (set-fontset-font name character font-spec))
-        (dolist (jp-character jp-characters)
-          (set-fontset-font name jp-character jp-font-spec))
-        (add-to-list 'face-font-rescale-alist (cons jp-font-family 1.3))))))
+    (let ((font-height (* default-font-size 10))
+          (name (frame-parameter nil 'font))
+          (font-spec (font-spec :family default-font-family))
+          (characters '((?\u00A0 . ?\u00FF)   ; Latin-1
+                        (?\u0100 . ?\u017F)   ; Latin Extended-A
+                        (?\u0180 . ?\u024F)   ; Latin Extended-B
+                        (?\u0250 . ?\u02AF)   ; IPA Extensions
+                        (?\u0370 . ?\u03FF))) ; Greek and Coptic
+          (ja-font-spec (font-spec :family ja-default-font-family))
+          (ja-characters '(katakana-jisx0201
+                           cp932-2-byte
+                           japanese-jisx0212
+                           japanese-jisx0213-2
+                           japanese-jisx0213.2004-1))) 
+      (set-face-attribute 'default nil
+                          :family default-font-family
+                          :height font-height)
+      (dolist (character characters)
+        (set-fontset-font name character font-spec))
+      (dolist (ja-character ja-characters)
+        (set-fontset-font name ja-character ja-font-spec))
+      (add-to-list 'face-font-rescale-alist
+                   (cons ja-default-font-family ja-default-font-rescale)))))
 (add-hook 'after-init-hook #'set-font)
 (add-hook 'after-make-frame-functions #'set-font)
 
@@ -1219,7 +1266,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package exec-path-from-shell
   :ensure t
-  :when (eq system-type 'darwin)
+  :when *is-mac*
   :defer 1
   :config
   (exec-path-from-shell-initialize))
