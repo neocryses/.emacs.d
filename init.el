@@ -1719,6 +1719,13 @@ function to return a regular expression, or
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode)))
 
+;;;; Fish
+
+(use-package fish-mode
+  :ensure t
+  :defer t
+  :mode (("\\.fish\\'" . fish-mode)))
+
 ;;;; Plantuml
 
 (use-package plantuml-mode
