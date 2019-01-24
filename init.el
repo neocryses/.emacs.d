@@ -185,7 +185,7 @@ _l_: move right  _L_: move window right _+_: Increase height
   ;; Encoding settings
   (prefer-coding-system 'utf-8)
   ;; Windows specific encoding settings
-  (when (eq system-type 'windows-nt)
+  (when *is-win*
     (set-file-name-coding-system 'cp932)
     (set-keyboard-coding-system 'cp932)
     (set-terminal-coding-system 'cp932))
@@ -265,7 +265,8 @@ _l_: move right  _L_: move window right _+_: Increase height
 ;; Mimic vim's scroll margin behavior
 (setq scroll-conservatively 101
       scroll-margin 5
-      scroll-preserve-screen-position t)
+      scroll-preserve-screen-position t
+      hscroll-step 1)
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 
 ;; Set the default indent width
@@ -315,45 +316,107 @@ _l_: move right  _L_: move window right _+_: Increase height
   "Rescaling value for Japanese characters")
 
 (cond (*is-win*
-       (setq default-font-family "Myrica M"
-             default-font-size 10
-             ja-default-font-family default-font-family
-             ja-default-font-rescale "1.0"))
+       (setq default-font-family "Myrica M")
+       (setq default-font-size 10)
+       (setq ja-default-font-family default-font-family)
+       (setq ja-default-font-rescale 1.0)
+       )
       (*is-mac*
-       (setq default-font-family "Operator Mono SSm"
-             default-font-size 11
-             ja-default-font-family "Ricty Discord"
-             ja-default-font-rescale "1.3")))
+       (progn
+         (setq default-font-family "Operator Mono SSm")
+         (setq default-font-size 10)
+         (setq ja-default-font-family "Ricty Discord")
+         (setq ja-default-font-rescale 1.3))))
 
 (defun set-font (&optional frame)
   (when frame
     (select-frame frame))
   (when (display-graphic-p)
-    (let ((font-height (* default-font-size 10))
-          (name (frame-parameter nil 'font))
-          (font-spec (font-spec :family default-font-family))
-          (characters '((?\u00A0 . ?\u00FF)   ; Latin-1
-                        (?\u0100 . ?\u017F)   ; Latin Extended-A
-                        (?\u0180 . ?\u024F)   ; Latin Extended-B
-                        (?\u0250 . ?\u02AF)   ; IPA Extensions
-                        (?\u0370 . ?\u03FF))) ; Greek and Coptic
-          (ja-font-spec (font-spec :family ja-default-font-family))
-          (ja-characters '(katakana-jisx0201
-                           cp932-2-byte
-                           japanese-jisx0212
-                           japanese-jisx0213-2
-                           japanese-jisx0213.2004-1))) 
-      (set-face-attribute 'default nil
-                          :family default-font-family
-                          :height font-height)
-      (dolist (character characters)
-        (set-fontset-font name character font-spec))
-      (dolist (ja-character ja-characters)
-        (set-fontset-font name ja-character ja-font-spec))
-      (add-to-list 'face-font-rescale-alist
-                   (cons ja-default-font-family ja-default-font-rescale)))))
+    (let* ((font-family default-font-family)
+           (font-size 11)
+           (font-height (* font-size default-font-size))
+           (ja-font-family ja-default-font-family))
+      (set-face-attribute 'default nil :family font-family :height font-height)
+      (let ((name (frame-parameter nil 'font))
+            (font-spec (font-spec :family font-family))
+            (characters '((?\u00A0 . ?\u00FF) ; Latin-1
+                          (?\u0100 . ?\u017F) ; Latin Extended-A
+                          (?\u0180 . ?\u024F) ; Latin Extended-B
+                          (?\u0250 . ?\u02AF) ; IPA Extensions
+                          (?\u0370 . ?\u03FF))) ; Greek and Coptic
+            (ja-font-spec (font-spec :family ja-font-family))
+            (ja-characters '(katakana-jisx0201
+                             cp932-2-byte
+                             japanese-jisx0212
+                             japanese-jisx0213-2
+                             japanese-jisx0213.2004-1))) 
+        (dolist (character characters)
+          (set-fontset-font name character font-spec))
+        (dolist (ja-character ja-characters)
+          (set-fontset-font name ja-character ja-font-spec))
+        (add-to-list 'face-font-rescale-alist (cons ja-font-family ja-default-font-rescale))))))
 (add-hook 'after-init-hook #'set-font)
 (add-hook 'after-make-frame-functions #'set-font)
+
+;; (defun set-font (&optional frame)
+;;   (when frame
+;;     (select-frame frame))
+;;   (when (display-graphic-p)
+;;     (let ((font-height (* default-font-size 10))
+;;           (name (frame-parameter nil 'font))
+;;           (font-spec (font-spec :family default-font-family))
+;;           (characters '((?\u00A0 . ?\u00FF)   ; Latin-1
+;;                         (?\u0100 . ?\u017F)   ; Latin Extended-A
+;;                         (?\u0180 . ?\u024F)   ; Latin Extended-B
+;;                         (?\u0250 . ?\u02AF)   ; IPA Extensions
+;;                         (?\u0370 . ?\u03FF))) ; Greek and Coptic
+;;           (ja-font-spec (font-spec :family ja-default-font-family))
+;;           (ja-characters '(katakana-jisx0201
+;;                            cp932-2-byte
+;;                            japanese-jisx0212
+;;                            japanese-jisx0213-2
+;;                            japanese-jisx0213.2004-1))) 
+;;       (set-face-attribute 'default nil
+;;                           :family default-font-family
+;;                           :height font-height)
+;;       (dolist (character characters)
+;;         (set-fontset-font name character font-spec))
+;;       (dolist (ja-character ja-characters)
+;;         (set-fontset-font name ja-character ja-font-spec))
+;;       (add-to-list 'face-font-rescale-alist
+;;                    (cons ja-default-font-family ja-default-font-rescale)))))
+;; (add-hook 'after-init-hook #'set-font)
+;; (add-hook 'after-make-frame-functions #'set-font)
+
+;; (defun set-font (&optional frame)
+;;   (when frame
+;;     (select-frame frame))
+;;   (when (display-graphic-p)
+;;     (let* ((font-family "Operator Mono SSm")
+;;            (font-size 11)
+;;            (font-height (* font-size 10))
+;;            (jp-font-family "Ricty Discord"))
+;;       (set-face-attribute 'default nil :family font-family :height font-height)
+;;       (let ((name (frame-parameter nil 'font))
+;;             (font-spec (font-spec :family font-family))
+;;             (characters '((?\u00A0 . ?\u00FF) ; Latin-1
+;;                           (?\u0100 . ?\u017F) ; Latin Extended-A
+;;                           (?\u0180 . ?\u024F) ; Latin Extended-B
+;;                           (?\u0250 . ?\u02AF) ; IPA Extensions
+;;                           (?\u0370 . ?\u03FF))) ; Greek and Coptic
+;;             (jp-font-spec (font-spec :family jp-font-family))
+;;             (jp-characters '(katakana-jisx0201
+;;                              cp932-2-byte
+;;                              japanese-jisx0212
+;;                              japanese-jisx0213-2
+;;                              japanese-jisx0213.2004-1))) 
+;;         (dolist (character characters)
+;;           (set-fontset-font name character font-spec))
+;;         (dolist (jp-character jp-characters)
+;;           (set-fontset-font name jp-character jp-font-spec))
+;;         (add-to-list 'face-font-rescale-alist (cons jp-font-family 1.3))))))
+;; (add-hook 'after-init-hook #'set-font)
+;; (add-hook 'after-make-frame-functions #'set-font)
 
 ;;;;; Version 4
 
@@ -705,6 +768,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure nil
   :defer t
   :commands dired
+  :hook (dired-mode . dired-hide-details-mode)
   :general
   (:keymaps '(dired-mode-map)
    :states '(normal visual)
@@ -1221,6 +1285,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal visual)
    "]c" 'git-gutter:next-hunk
    "[c" 'git-gutter:previous-hunk))
+
+;;;; Debug
+(use-package bug-hunter
+  :ensure t
+  :defer t
+  :commands bug-hunter-init-file)
 
 ;;;; Miscelleneous
 
