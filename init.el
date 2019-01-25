@@ -40,7 +40,7 @@
 (setq package-enable-at-startup nil)
 
 ;; Set up the archive URL according to the availability of SSL.
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+(let* ((no-ssl (and *is-win*
                     (not (gnutls-available-p))))
        (proto (if no-ssl "http" "https")))
   (setq package-archives `(("org" . ,(concat proto "://orgmode.org/elpa/"))
@@ -235,6 +235,9 @@ _l_: move right  _L_: move window right _+_: Increase height
 
 ;; Disable the site default settings. See (info "(emacs) Init File")
 (setq inhibit-default-init t)
+
+;; Disable bidi-display
+(setq-default bidi-display-reordering nil)
 
 ;; Time locale setting
 ;; Set to "C" for English time locale
@@ -501,7 +504,7 @@ _l_: move right  _L_: move window right _+_: Increase height
     (evil-range (point-min) (point-max)))
 
   ;; Temporary fix for screen blinking while inserting text with ime for macOS
-  (when (eq system-type 'darwin)
+  (when *is-mac*
     (defun enable-redisplay-dont-pause ()
       "Set the value of redisplay-dont-pause to t."
       (setq redisplay-dont-pause t))
@@ -1174,7 +1177,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t
   :delight projectile-mode
   :config
-  (when (eq system-type 'windows-nt)
+  (when *is-win*
     (defun windows-command-coding (orig-fun &rest args)
       "Fix the handling of the coding for external commands"
       (let ((coding-system-for-read 'utf-8)
@@ -1324,11 +1327,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (defun terminal-here-default-terminal-command (_dir)
     "Pick a good default command to use for DIR."
     (cond
-     ((eq system-type 'darwin)
+     (*is-mac*
       (list "open" "-a" "iTerm.app" "."))
 
      ;; From http://stackoverflow.com/a/13509208/874671
-     ((memq system-type '(windows-nt ms-dos cygwin))
+     (*is-win*
       ;; (list "cmd.exe" "/C" "start" "nyagos.exe")
       (list "cmd.exe" "/C" "start" "nyagos.exe"))
 
