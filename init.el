@@ -324,7 +324,7 @@ _l_: move right  _L_: move window right _+_: Increase height
       (*is-mac*
        (progn
          (setq default-font-family "Operator Mono SSm")
-         (setq default-font-size 10)
+         (setq default-font-size 11)
          (setq ja-default-font-family "Ricty Discord")
          (setq ja-default-font-rescale 1.3))))
 
@@ -333,8 +333,8 @@ _l_: move right  _L_: move window right _+_: Increase height
     (select-frame frame))
   (when (display-graphic-p)
     (let* ((font-family default-font-family)
-           (font-size 11)
-           (font-height (* font-size default-font-size))
+           (font-size default-font-size)
+           (font-height (* font-size 10))
            (ja-font-family ja-default-font-family))
       (set-face-attribute 'default nil :family font-family :height font-height)
       (let ((name (frame-parameter nil 'font))
@@ -357,36 +357,6 @@ _l_: move right  _L_: move window right _+_: Increase height
         (add-to-list 'face-font-rescale-alist (cons ja-font-family ja-default-font-rescale))))))
 (add-hook 'after-init-hook #'set-font)
 (add-hook 'after-make-frame-functions #'set-font)
-
-;; (defun set-font (&optional frame)
-;;   (when frame
-;;     (select-frame frame))
-;;   (when (display-graphic-p)
-;;     (let ((font-height (* default-font-size 10))
-;;           (name (frame-parameter nil 'font))
-;;           (font-spec (font-spec :family default-font-family))
-;;           (characters '((?\u00A0 . ?\u00FF)   ; Latin-1
-;;                         (?\u0100 . ?\u017F)   ; Latin Extended-A
-;;                         (?\u0180 . ?\u024F)   ; Latin Extended-B
-;;                         (?\u0250 . ?\u02AF)   ; IPA Extensions
-;;                         (?\u0370 . ?\u03FF))) ; Greek and Coptic
-;;           (ja-font-spec (font-spec :family ja-default-font-family))
-;;           (ja-characters '(katakana-jisx0201
-;;                            cp932-2-byte
-;;                            japanese-jisx0212
-;;                            japanese-jisx0213-2
-;;                            japanese-jisx0213.2004-1))) 
-;;       (set-face-attribute 'default nil
-;;                           :family default-font-family
-;;                           :height font-height)
-;;       (dolist (character characters)
-;;         (set-fontset-font name character font-spec))
-;;       (dolist (ja-character ja-characters)
-;;         (set-fontset-font name ja-character ja-font-spec))
-;;       (add-to-list 'face-font-rescale-alist
-;;                    (cons ja-default-font-family ja-default-font-rescale)))))
-;; (add-hook 'after-init-hook #'set-font)
-;; (add-hook 'after-make-frame-functions #'set-font)
 
 ;; (defun set-font (&optional frame)
 ;;   (when frame
