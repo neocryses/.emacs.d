@@ -1352,7 +1352,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :delight undo-tree-mode
   :defer t
   :config
-  (setq undo-tree-auto-save-history nil
+  (setq undo-tree-auto-save-history t
         undo-tree-enable-undo-in-region nil)
   :general
   (:states '(normal visual)
