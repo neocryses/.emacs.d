@@ -497,7 +497,7 @@ _l_: move right  _L_: move window right _+_: Increase height
   :ensure t
   :demand
   :init
-  (setq evil-want-keybinding nil)
+  ;; (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-i-jump t)
   (setq evil-want-Y-yank-to-eol t)
@@ -619,6 +619,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 ;; This package needs evil-want-keybinding set to nil on evil init
 (use-package evil-collection
+  :disabled
   :after evil
   :ensure t
   :demand
@@ -744,7 +745,18 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t
   :commands dired
   :hook (dired-mode . dired-hide-details-mode)
+  :config
+  (defun dired-buffer-file-parent ()
+    "Opens dired in the parent directory of the current buffer."
+    (interactive)
+    (dired (file-name-directory buffer-file-name)))
+
+  (setq dired-use-ls-dired nil)
+
   :general
+  (:states '(normal visual)
+   "-" 'dired-buffer-file-parent)
+  
   (:keymaps '(dired-mode-map)
    :states '(normal visual)
    "q" 'quit-window
@@ -838,7 +850,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "Y" 'dired-copy-filename-as-kill
    "+" 'dired-create-directory
    ;; open
-   "<return>" 'dired-find-file
+   ;; "<return>" 'dired-find-file
    "S-<return>" 'dired-find-file-other-window
    "M-<return>" 'dired-display-file
    "gO" 'dired-find-file-other-window
@@ -852,7 +864,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "]" 'dired-next-dirline
    "<" 'dired-prev-dirline
    ">" 'dired-next-dirline
-   "^" 'dired-up-directory
+   ;; "^" 'dired-up-directory
    " " 'dired-next-line
    [?\S-\ ] 'dired-previous-line
    [remap next-line] 'dired-next-line
@@ -901,7 +913,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    :states '(normal visual)
    [return] 'dired-single-buffer
    [mouse-1] 'dired-single-buffer-mouse
-   "^" 'dired-single-up-directory))
+   ;; "^" 'dired-single-up-directory
+   "-" 'dired-single-up-directory))
 
 (use-package dired-x
   :ensure nil
@@ -1260,6 +1273,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package git-gutter
   :ensure t
+  :delight git-gutter-mode
   :defer 1
   :init
   (setq git-gutter:update-interval 1)
@@ -1552,7 +1566,6 @@ Lisp function does not specify a special indentation."
    "oc" 'org-capture)
   (:states '(normal)
    :keymaps '(org-mode-map)
-   "-" 'org-cycle-list-bullet
    "<" 'org-metaleft
    ">" 'org-metaright)
   (:states '(normal visual)
