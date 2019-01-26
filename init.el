@@ -62,15 +62,21 @@
 
 ;;;; Suppress messages
 
-(defun supress-error (data context signal)
-  "Suppress some of the unnecessary error messages"
-  (when (not (memq (car data) '(beginning-of-line
-                                beginning-of-buffer
-                                end-of-line
-                                end-of-buffer
-                                text-read-only)))
-    (command-error-default-function data context signal)))
-(setq command-error-function 'supress-error)
+;; (defun supress-error (data context signal)
+;;   "Suppress some of the unnecessary error messages"
+;;   (when (not (memq (car data) '(beginning-of-line
+;;                                 beginning-of-buffer
+;;                                 end-of-line
+;;                                 end-of-buffer
+;;                                 text-read-only)))
+;;     (command-error-default-function data context signal)))
+;; (setq command-error-function 'supress-error)
+
+(defun supress-message (orig-fun &rest args)
+  "Fix the handling of the coding for external commands"
+  (let ((inhibit-message t))
+    (apply orig-fun args)))
+(advice-add 'push-mark :around #'supress-message)
 
 ;;;; Dealing with very large files
 
@@ -522,12 +528,6 @@ _l_: move right  _L_: move window right _+_: Increase height
     (add-hook 'minibuffer-exit-hook
               #'enable-redisplay-dont-pause))
 
-  (defun supress-message (orig-fun &rest args)
-    "Fix the handling of the coding for external commands"
-    (let ((inhibit-message t))
-      (apply orig-fun args)))
-  (advice-add 'push-mark :around #'supress-message)
-
   (evil-define-command evil-ex-vresize (arg)
     "The ex :vresize command.
 
@@ -694,6 +694,13 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package rg
   :ensure t
   :commands (rg))
+
+;;;; Scrolling
+
+(use-package smooth-scrolling
+  :disabled
+  :ensure t
+  :commands (smooth-scrolling-mode))
 
 ;;;; Window management
 
@@ -1170,6 +1177,9 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal visual)
    :prefix global-leader
    "ss" 'avy-goto-char))
+
+(use-package helm-gtags
+  :ensure t)
 
 ;;;; Projects
 

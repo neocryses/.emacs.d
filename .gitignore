@@ -1,3 +1,7 @@
 /.cache/
 /etc/
 /var/
+tags
+GPATH
+GRTAGS
+GTAGS
