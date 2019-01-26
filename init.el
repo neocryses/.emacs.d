@@ -1014,6 +1014,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :delight company-mode
   :commands (company-mode company-indent-or-complete-common)
   :hook (prog-mode . company-mode)
+  :config
+  (setq company-ddabbrev-code-everywhere t)
+  (setq company-dabbrev-code-modes t)
+  (setq company-dabbrev-code-other-buffers 'all)
+  (setq company-dabbrev-ignore-buffers "\\`\\'")
+  (add-to-list 'company-backends '(company-capf company-dabbrev))
   :general
   (:keymaps '(company-active-map)
    [tab] 'company-complete-common-or-cycle
