@@ -1035,10 +1035,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq company-dabbrev-code-other-buffers 'all)
   (setq company-dabbrev-ignore-buffers "\\`\\'")
   (add-to-list 'company-backends '(company-capf company-dabbrev))
+
   :general
   (:keymaps '(company-active-map)
    [tab] 'company-complete-common-or-cycle
-   [backtab] 'company-select-previous
+   [backtab] (lambda () (interactive)(company-complete-common-or-cycle -1))
    "C-n" 'company-select-next
    "C-p" 'company-select-previous))
 
