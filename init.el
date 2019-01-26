@@ -269,7 +269,9 @@ _l_: move right  _L_: move window right _+_: Increase height
 (setq scroll-conservatively 101
       scroll-margin 5
       scroll-preserve-screen-position t
-      hscroll-step 1)
+      hscroll-step 1
+      hscroll-margin 5
+      auto-hscroll-mode t)
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 
 ;; Set the default indent width
