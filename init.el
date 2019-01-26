@@ -1266,6 +1266,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "[c" 'git-gutter:previous-hunk))
 
 ;;;; Debug
+
 (use-package bug-hunter
   :ensure t
   :defer t
