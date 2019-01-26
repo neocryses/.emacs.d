@@ -722,13 +722,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (setq ediff-window-setup-function 'ediff-setup-windows-plain))
 
-(use-package evil-ediff
-  :after evil
-  :ensure t
-  :after ediff
-  :defer t
-  :hook (ediff-mode . evil-ediff-init))
-
 (use-package vdiff
   :ensure t
   :defer t
