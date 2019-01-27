@@ -592,8 +592,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    [escape] 'minibuffer-keyboard-quit)
 
   ;; Disable selection marking with "C-SPC"
-  (:keymaps '(global)
-   "C-SPC" nil)
+  ;; (:keymaps '(global)
+  ;;  "C-SPC" nil)
 
   (:keymaps '(evil-ex-completion-map)
    "C-b" 'backward-char
@@ -1709,6 +1709,12 @@ function to return a regular expression, or
   (setq-default web-mode-markup-indent-offset tab-width
                 web-mode-css-indent-offset tab-width
                 web-mode-code-indent-offset tab-width))
+
+;;;; Javascript
+
+(use-package js2-mode
+  :ensure t
+  :mode (("\\.js\\'" . js2-mode)))
 
 ;;;; Markdown
 
