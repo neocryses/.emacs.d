@@ -355,7 +355,7 @@ _l_: move right  _L_: move window right _+_: Increase height
                           (?\u0180 . ?\u024F) ; Latin Extended-B
                           (?\u0250 . ?\u02AF) ; IPA Extensions
                           (?\u0370 . ?\u03FF) ; Greek and Coptic
-                          (?\u0183))) ;Whitespace-mode ·
+                          ?\u0183)) ;Whitespace-mode ·
             (ja-font-spec (font-spec :family ja-font-family))
             (ja-characters '(katakana-jisx0201
                              cp932-2-byte
