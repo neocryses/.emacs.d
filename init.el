@@ -671,6 +671,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (evil-collection-init))
 
+(use-package evil-goggles
+  :ensure t
+  :config
+  (add-to-list 'evil-goggles--commands '(lispyville-yank :face evil-goggles-yank-face :switch evil-goggles-enable-yank :advice evil-goggles--generic-async-advice))
+  (add-to-list 'evil-goggles--commands '(lispyville-change :face evil-goggles-change-face :switch evil-goggles-enable-change :advice evil-goggles--generic-blocking-advice))
+  (add-to-list 'evil-goggles--commands '(lispyville-delete :face evil-goggles-delete-face :switch evil-goggles-enable-delete :advice evil-goggles--generic-blocking-advice))
+  (evil-goggles-mode))
+
 (use-package evil-commentary
   :after evil
   :ensure t
