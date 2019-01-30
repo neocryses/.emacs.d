@@ -195,8 +195,9 @@ _l_: move right  _L_: move window right _+_: Increase height
     (set-file-name-coding-system 'cp932)
     (set-keyboard-coding-system 'cp932)
     (set-terminal-coding-system 'cp932)
-    (setq default-process-coding-system '(cp932-dos . cp932-unix))
-    )
+    (setq default-process-coding-system '(undecided-dos . utf-8-unix))
+    (add-to-list 'process-coding-system-alist '("fd" . (utf-8-dos . utf-8-unix)))
+    (add-to-list 'process-coding-system-alist '("global" . (cp932-dos . cp932-dos))))
   ;; Encoding priority
   (set-charset-priority 'ascii 'japanese-jisx0208 'latin-jisx0201
                         'katakana-jisx0201 'iso-8859-1 'unicode)
@@ -332,8 +333,7 @@ _l_: move right  _L_: move window right _+_: Increase height
        (setq default-font-family "Myrica M")
        (setq default-font-size 10)
        (setq ja-default-font-family default-font-family)
-       (setq ja-default-font-rescale 1.0)
-       )
+       (setq ja-default-font-rescale 1.0))
       (*is-mac*
        (progn
          (setq default-font-family "Operator Mono SSm")
@@ -1252,13 +1252,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (when *is-win*
 
-    (defun cp932-command-coding (orig-fun &rest args)
-      "Fix the handling of the coding for external commands"
-      (let ((coding-system-for-read 'cp932-dos)
-            (coding-system-for-write 'cp932-unix))
-        (apply orig-fun args)))
+    ;; (defun cp932-command-coding (orig-fun &rest args)
+    ;;   "Fix the handling of the coding for external commands"
+    ;;   (let ((coding-system-for-read 'cp932-dos)
+    ;;         (coding-system-for-write 'cp932-unix))
+    ;;     (apply orig-fun args)))
     ;; (advice-add 'helm-gtags--tag-directory :around #'cp932-command-coding)
-    (advice-add 'process-file :around #'cp932-command-coding)))
+    ;; (advice-add 'process-file :around #'cp932-command-coding)
+    ))
 
 (use-package ggtags
   :ensure t
@@ -1275,12 +1276,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
 
   (when *is-win*
-    (defun utf-8-command-coding (orig-fun &rest args)
-      "Fix the handling of the coding for external commands"
-      (let ((coding-system-for-read 'utf-8-dos)
-            (coding-system-for-write 'utf-8-unix))
-        (apply orig-fun args)))
-    (advice-add 'projectile-files-via-ext-command :around #'utf-8-command-coding)
+    ;; (defun utf-8-command-coding (orig-fun &rest args)
+    ;;   "Fix the handling of the coding for external commands"
+    ;;   (let ((coding-system-for-read 'utf-8-dos)
+    ;;         (coding-system-for-write 'utf-8-unix))
+    ;;     (apply orig-fun args)))
+    ;; (advice-add 'projectile-files-via-ext-command :around #'utf-8-command-coding)
 
     (defun win-to-unix-path (path)
       "Convert windows style path to unix style path"
