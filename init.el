@@ -556,7 +556,7 @@ _l_: move right  _L_: move window right _+_: Increase height
   :ensure t
   :demand
   :init
-  ;; (setq evil-want-keybinding nil)
+  (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-i-jump t)
   (setq evil-want-Y-yank-to-eol t)
@@ -678,12 +678,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 ;; This package needs evil-want-keybinding set to nil on evil init
 (use-package evil-collection
-  :disabled
   :after evil
   :ensure t
   :demand
   :config
-  (evil-collection-init))
+  (evil-collection-init '(simple calc calendar comint custom ediff occur xref simple term)))
 
 (use-package evil-goggles
   :ensure t
@@ -1421,8 +1420,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package calc
   :ensure nil
-  :defer t
+  ;; :defer t
   :commands (calc)
+  ;; :config
+  ;; (require 'calc-ext)
+
   ;; :general
   ;; (:states '(normal visual)
   ;;  "-" 'dired-buffer-file-parent)
@@ -1528,25 +1530,45 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   ;;  "}" 'calc-scroll-up                  ; TODO: Not necessary?
   ;;  "~" 'calc-num-prefix
 
-  ;;  "V" (lookup-key calc-mode-map (kbd "V"))
-  ;;  "Y" (lookup-key calc-mode-map (kbd "Y"))
-  ;;  "Z" (lookup-key calc-mode-map (kbd "Z"))
-  ;;  "a" (lookup-key calc-mode-map (kbd "a"))
-  ;;  "b" (lookup-key calc-mode-map (kbd "b"))
-  ;;  "c" (lookup-key calc-mode-map (kbd "c"))
-  ;;  "D" (lookup-key calc-mode-map (kbd "d"))
-  ;;  "f" (lookup-key calc-mode-map (kbd "f"))
-  ;;  "g" (lookup-key calc-mode-map (kbd "g"))
-  ;;  "zj" (lookup-key calc-mode-map (kbd "j"))
-  ;;  "zk" (lookup-key calc-mode-map (kbd "k"))
-  ;;  "zl" (lookup-key calc-mode-map (kbd "l"))
-  ;;  "m" (lookup-key calc-mode-map (kbd "m"))
-  ;;  "r" (lookup-key calc-mode-map (kbd "r"))
-  ;;  "s" (lookup-key calc-mode-map (kbd "s"))
-  ;;  "t" (lookup-key calc-mode-map (kbd "t"))
-  ;;  "U" (lookup-key calc-mode-map (kbd "u"))
-  ;;  "v" (lookup-key calc-mode-map (kbd "v"))
-  ;;  "zz" (lookup-key calc-mode-map (kbd "z"))
+  ;;  ;; "V" (lookup-key calc-mode-map (kbd "V"))
+  ;;  ;; "Y" (lookup-key calc-mode-map (kbd "Y"))
+  ;;  ;; "Z" (lookup-key calc-mode-map (kbd "Z"))
+  ;;  ;; "a" (lookup-key calc-mode-map (kbd "a"))
+  ;;  ;; "b" (lookup-key calc-mode-map (kbd "b"))
+  ;;  ;; "c" (lookup-key calc-mode-map (kbd "c"))
+  ;;  ;; "D" (lookup-key calc-mode-map (kbd "d"))
+  ;;  ;; "f" (lookup-key calc-mode-map (kbd "f"))
+  ;;  ;; "g" (lookup-key calc-mode-map (kbd "g"))
+  ;;  ;; "zj" (lookup-key calc-mode-map (kbd "j"))
+  ;;  ;; "zk" (lookup-key calc-mode-map (kbd "k"))
+  ;;  ;; "zl" (lookup-key calc-mode-map (kbd "l"))
+  ;;  ;; "m" (lookup-key calc-mode-map (kbd "m"))
+  ;;  ;; "r" (lookup-key calc-mode-map (kbd "r"))
+  ;;  ;; "s" (lookup-key calc-mode-map (kbd "s"))
+  ;;  ;; "t" (lookup-key calc-mode-map (kbd "t"))
+  ;;  ;; "U" (lookup-key calc-mode-map (kbd "u"))
+  ;;  ;; "v" (lookup-key calc-mode-map (kbd "v"))
+  ;;  ;; "zz" (lookup-key calc-mode-map (kbd "z"))
+
+  ;;  ;; "V" (lookup-key calc-mode-map (kbd "V"))
+  ;;  ;; "Y" (lookup-key calc-mode-map (kbd "Y"))
+  ;;  ;; "Z" (lookup-key calc-mode-map (kbd "Z"))
+  ;;  ;; "a" (lookup-key calc-mode-map (kbd "a"))
+  ;;  ;; "b" (lookup-key calc-mode-map (kbd "b"))
+  ;;  ;; "c" (lookup-key calc-mode-map (kbd "c"))
+  ;;  ;; "D" (lookup-key calc-mode-map (kbd "d"))
+  ;;  ;; "f" (lookup-key calc-mode-map (kbd "f"))
+  ;;  ;; "g" (lookup-key calc-mode-map (kbd "g"))
+  ;;  ;; "zj" (lookup-key calc-mode-map (kbd "j"))
+  ;;  ;; "zk" (lookup-key calc-mode-map (kbd "k"))
+  ;;  ;; "zl" (lookup-key calc-mode-map (kbd "l"))
+  ;;  ;; "m" (lookup-key calc-mode-map (kbd "m"))
+  ;;  ;; "r" (lookup-key calc-mode-map (kbd "r"))
+  ;;  ;; "s" (lookup-key calc-mode-map (kbd "s"))
+  ;;  ;; "t" (lookup-key calc-mode-map (kbd "t"))
+  ;;  ;; "U" (lookup-key calc-mode-map (kbd "u"))
+  ;;  ;; "v" (lookup-key calc-mode-map (kbd "v"))
+  ;;  ;; "zz" (lookup-key calc-mode-map (kbd "z"))
 
   ;;  ;; quit
   ;;  ;; "ZQ" 'quit-window ; TODO: Rebind "Z"?
