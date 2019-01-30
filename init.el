@@ -184,10 +184,21 @@ _l_: move right  _L_: move window right _+_: Increase height
 
 ;;;; Cp5022x
 
+;; Uncomment following to find what program is being run by process-file
+;; (defvar global-program-process nil
+;;   "Test var")
+;; (defun debug-program-process (orig-fun &rest args)
+;;   "Test"
+;;   (setq global-program-process args)
+;;   (apply orig-fun args))
+;; (advice-add 'process-file :around #'debug-program-process)
+
 (use-package cp5022x
   :ensure t
   :demand
   :config
+  (set-language-environment "Japanese")
+  (setq locale-coding-system 'utf-8-unix)
   ;; Encoding settings
   (prefer-coding-system 'utf-8)
   ;; Windows specific encoding settings
@@ -195,9 +206,10 @@ _l_: move right  _L_: move window right _+_: Increase height
     (set-file-name-coding-system 'cp932)
     (set-keyboard-coding-system 'cp932)
     (set-terminal-coding-system 'cp932)
-    (setq default-process-coding-system '(undecided-dos . utf-8-unix))
-    (add-to-list 'process-coding-system-alist '("fd" . (utf-8-dos . utf-8-unix)))
-    (add-to-list 'process-coding-system-alist '("global" . (cp932-dos . cp932-dos))))
+    ;; (setq default-process-coding-system '(undecided-dos . utf-8-unix))
+    (setq default-process-coding-system '(undecided-dos . cp932-unix))
+    (add-to-list 'process-coding-system-alist '("[cC][mM][dD][pP][rR][oO][xX][yY]" . (utf-8-dos . utf-8-unix)))
+    (add-to-list 'process-coding-system-alist '("gtags" . (cp932-dos . cp932-unix))))
   ;; Encoding priority
   (set-charset-priority 'ascii 'japanese-jisx0208 'latin-jisx0201
                         'katakana-jisx0201 'iso-8859-1 'unicode)
@@ -1252,13 +1264,29 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
   (when *is-win*
 
-    ;; (defun cp932-command-coding (orig-fun &rest args)
-    ;;   "Fix the handling of the coding for external commands"
-    ;;   (let ((coding-system-for-read 'cp932-dos)
-    ;;         (coding-system-for-write 'cp932-unix))
-    ;;     (apply orig-fun args)))
-    ;; (advice-add 'helm-gtags--tag-directory :around #'cp932-command-coding)
-    ;; (advice-add 'process-file :around #'cp932-command-coding)
+    (defun helm-gtags--exec-global-command-fix (orig-fun &rest args)
+      "Fix the handling of the coding for external commands"
+      (let ((buffer-file-coding-system 'cp932-dos))
+        (apply orig-fun args)))
+    (advice-add 'helm-gtags--exec-global-command :around #'helm-gtags--exec-global-command-fix)
+
+    ;; (defun helm-gtags--exec-global-command (type input &optional detail)
+    ;;   (let ((args (helm-gtags--construct-command type input)))
+    ;;     (helm-gtags--find-tag-directory)
+    ;;     (helm-gtags--save-current-context)
+    ;;     (with-current-buffer (helm-candidate-buffer 'global)
+    ;;       (let ((default-directory (helm-gtags--base-directory))
+    ;;             (input (car (last args))))
+    ;;         (unless (zerop (apply #'process-file "global" nil '(t nil) nil args))
+    ;;           (error (format "%s: not found" input)))
+    ;;         ;; --path options does not support searching under GTAGSLIBPATH
+    ;;         (when (eq type 'find-file)
+    ;;           (helm-gtags--print-path-in-gtagslibpath args))
+    ;;         (helm-gtags--remove-carrige-returns)
+    ;;         (when detail
+    ;;           (helm-gtags--show-detail))))))
+
+    
     ))
 
 (use-package ggtags
@@ -1276,13 +1304,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
 
   (when *is-win*
-    ;; (defun utf-8-command-coding (orig-fun &rest args)
-    ;;   "Fix the handling of the coding for external commands"
-    ;;   (let ((coding-system-for-read 'utf-8-dos)
-    ;;         (coding-system-for-write 'utf-8-unix))
-    ;;     (apply orig-fun args)))
-    ;; (advice-add 'projectile-files-via-ext-command :around #'utf-8-command-coding)
-
     (defun win-to-unix-path (path)
       "Convert windows style path to unix style path"
       (subst-char-in-string ?\\ ?/ path))
@@ -1402,139 +1423,140 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure nil
   :defer t
   :commands (calc)
-  :general
+  ;; :general
   ;; (:states '(normal visual)
   ;;  "-" 'dired-buffer-file-parent)
   
-  (:keymaps '(calc-mode-map)
-   :states '(normal visual)
-   "0" 'calcDigit-start
-   "1" 'calcDigit-start
-   "2" 'calcDigit-start
-   "3" 'calcDigit-start
-   "4" 'calcDigit-start
-   "5" 'calcDigit-start
-   "6" 'calcDigit-start
-   "7" 'calcDigit-start
-   "8" 'calcDigit-start
-   "9" 'calcDigit-start
+  ;; (:keymaps '(calc-mode-map)
+  ;;  :states '(normal visual)
+  ;;  "0" 'calcDigit-start
+  ;;  "1" 'calcDigit-start
+  ;;  "2" 'calcDigit-start
+  ;;  "3" 'calcDigit-start
+  ;;  "4" 'calcDigit-start
+  ;;  "5" 'calcDigit-start
+  ;;  "6" 'calcDigit-start
+  ;;  "7" 'calcDigit-start
+  ;;  "8" 'calcDigit-start
+  ;;  "9" 'calcDigit-start
 
-   (kbd "<tab>") 'calc-roll-down
-   (kbd "S-<return>") 'calc-over
-   (kbd "<return>") 'calc-enter
-   (kbd "SPC") 'calc-enter
+  ;;  (kbd "<tab>") 'calc-roll-down
+  ;;  (kbd "S-<return>") 'calc-over
+  ;;  (kbd "<return>") 'calc-enter
+  ;;  (kbd "SPC") 'calc-enter
 
-   (kbd "C-x C-t") 'calc-transpose-lines
-   (kbd "C-M-d") 'calc-pop-above
-   (kbd "C-M-i") 'calc-roll-up
-   (kbd "M-RET") 'calc-last-args
-   (kbd "C-M-w") 'kill-ring-save
-   (kbd "M-%") 'calc-percent
-   (kbd "M-k") 'calc-copy-as-kill
-   (kbd "M-w") 'calc-copy-region-as-kill
-   (kbd "M-DEL") 'calc-pop-above
-   (kbd "M-m t") 'calc-total-algebraic-mode
-   (kbd "<delete>") 'calc-pop
-   (kbd "<mouse-2>") 'calc-yank
-   "x" 'calc-pop ; was "C-d".  TODO: Conflicts with calc-execute-extended-command.
-   "d" 'calc-kill                       ; was "C-k"
-   "u" 'calc-undo                       ; was "U"
-   "X" 'calc-call-last-kbd-macro        ; "@" is already used.
-   "pp" 'calc-yank                      ; was "C-y"
-   "pP" 'calc-copy-to-buffer            ; was "y"
+  ;;  (kbd "C-x C-t") 'calc-transpose-lines
+  ;;  (kbd "C-M-d") 'calc-pop-above
+  ;;  (kbd "C-M-i") 'calc-roll-up
+  ;;  (kbd "M-RET") 'calc-last-args
+  ;;  (kbd "C-M-w") 'kill-ring-save
+  ;;  (kbd "M-%") 'calc-percent
+  ;;  (kbd "M-k") 'calc-copy-as-kill
+  ;;  (kbd "M-w") 'calc-copy-region-as-kill
+  ;;  (kbd "M-DEL") 'calc-pop-above
+  ;;  (kbd "M-m t") 'calc-total-algebraic-mode
+  ;;  (kbd "<delete>") 'calc-pop
+  ;;  (kbd "<mouse-2>") 'calc-yank
+  ;;  "x" 'calc-pop ; was "C-d".  TODO: Conflicts with calc-execute-extended-command.
+  ;;  "d" 'calc-kill                       ; was "C-k"
+  ;;  "u" 'calc-undo                       ; was "U"
+  ;;  "X" 'calc-call-last-kbd-macro        ; "@" is already used.
+  ;;  "pp" 'calc-yank                      ; was "C-y"
+  ;;  "pP" 'calc-copy-to-buffer            ; was "y"
 
-   (kbd "C-p") 'calc-precision          ; was "p"
+  ;;  (kbd "C-p") 'calc-precision          ; was "p"
 
-   "?" 'calc-help
-   ;; "h" 'calc-help-prefix ; TODO: Rebind?
-   "i" 'calc-info
+  ;;  "?" 'calc-help
+  ;;  ;; "h" 'calc-help-prefix ; TODO: Rebind?
+  ;;  "i" 'calc-info
 
-   "\"" 'calc-auto-algebraic-entry
-   "$" 'calc-auto-algebraic-entry       ; TODO: No need for this one?
-   "'" 'calc-algebraic-entry
+  ;;  "\"" 'calc-auto-algebraic-entry
+  ;;  "$" 'calc-auto-algebraic-entry       ; TODO: No need for this one?
+  ;;  "'" 'calc-algebraic-entry
 
-   "!" 'calc-factorial
-   "#" 'calcDigit-start
-   "%" 'calc-mod
-   "&" 'calc-inv
-   "(" 'calc-begin-complex
-   ")" 'calc-end-complex
-   "*" 'calc-times
-   "+" 'calc-plus
-   "," 'calc-comma
-   "-" 'calc-minus
-   "." 'calcDigit-start
-   "/" 'calc-divide
-   ":" 'calc-fdiv
-   ";" 'calc-semi          ; TODO: Shall we really override `evil-ex'?
-   "<" 'calc-scroll-left
-   "=" 'calc-evaluate
-   ">" 'calc-scroll-right
-   "@" 'calcDigit-start
-   "A" 'calc-abs
-   "B" 'calc-log
-   "C" 'calc-cos
-   ;; "D" 'calc-redo             ; TODO: What's the purpose of this?  Bind to C-r?
-   "E" 'calc-exp
-   "F" 'calc-floor
-   "G" 'calc-argument
-   "H" 'calc-hyperbolic
-   "I" 'calc-inverse
-   "J" 'calc-conj
-   "K" 'calc-keep-args
-   "L" 'calc-ln
-   "M" 'calc-more-recursion-depth
-   "N" 'calc-eval-num
-   "O" 'calc-option
-   "P" 'calc-pi
-   "Q" 'calc-sqrt
-   "R" 'calc-round
-   "S" 'calc-sin
-   "T" 'calc-tan
-   "[" 'calc-begin-vector
-   "]" 'calc-end-vector
-   "\\" 'calc-idiv
-   "^" 'calc-power
-   "_" 'calcDigit-start
-   "`" 'calc-edit
-   "e" 'calcDigit-start
-   "n" 'calc-change-sign
-   "o" 'calc-realign
-   "w" 'calc-why
-   "x" 'calc-execute-extended-command ; TODO: Conflicts with calc-pop.
-   "|" 'calc-concat
-   "{" 'calc-scroll-down                ; TODO: Not necessary?
-   "}" 'calc-scroll-up                  ; TODO: Not necessary?
-   "~" 'calc-num-prefix
+  ;;  "!" 'calc-factorial
+  ;;  "#" 'calcDigit-start
+  ;;  "%" 'calc-mod
+  ;;  "&" 'calc-inv
+  ;;  "(" 'calc-begin-complex
+  ;;  ")" 'calc-end-complex
+  ;;  "*" 'calc-times
+  ;;  "+" 'calc-plus
+  ;;  "," 'calc-comma
+  ;;  "-" 'calc-minus
+  ;;  "." 'calcDigit-start
+  ;;  "/" 'calc-divide
+  ;;  ":" 'calc-fdiv
+  ;;  ";" 'calc-semi          ; TODO: Shall we really override `evil-ex'?
+  ;;  "<" 'calc-scroll-left
+  ;;  "=" 'calc-evaluate
+  ;;  ">" 'calc-scroll-right
+  ;;  "@" 'calcDigit-start
+  ;;  "A" 'calc-abs
+  ;;  "B" 'calc-log
+  ;;  "C" 'calc-cos
+  ;;  ;; "D" 'calc-redo             ; TODO: What's the purpose of this?  Bind to C-r?
+  ;;  "E" 'calc-exp
+  ;;  "F" 'calc-floor
+  ;;  "G" 'calc-argument
+  ;;  "H" 'calc-hyperbolic
+  ;;  "I" 'calc-inverse
+  ;;  "J" 'calc-conj
+  ;;  "K" 'calc-keep-args
+  ;;  "L" 'calc-ln
+  ;;  "M" 'calc-more-recursion-depth
+  ;;  "N" 'calc-eval-num
+  ;;  "O" 'calc-option
+  ;;  "P" 'calc-pi
+  ;;  "Q" 'calc-sqrt
+  ;;  "R" 'calc-round
+  ;;  "S" 'calc-sin
+  ;;  "T" 'calc-tan
+  ;;  "[" 'calc-begin-vector
+  ;;  "]" 'calc-end-vector
+  ;;  "\\" 'calc-idiv
+  ;;  "^" 'calc-power
+  ;;  "_" 'calcDigit-start
+  ;;  "`" 'calc-edit
+  ;;  "e" 'calcDigit-start
+  ;;  "n" 'calc-change-sign
+  ;;  "o" 'calc-realign
+  ;;  "w" 'calc-why
+  ;;  "x" 'calc-execute-extended-command ; TODO: Conflicts with calc-pop.
+  ;;  "|" 'calc-concat
+  ;;  "{" 'calc-scroll-down                ; TODO: Not necessary?
+  ;;  "}" 'calc-scroll-up                  ; TODO: Not necessary?
+  ;;  "~" 'calc-num-prefix
 
-   "V" (lookup-key calc-mode-map (kbd "V"))
-   "Y" (lookup-key calc-mode-map (kbd "Y"))
-   "Z" (lookup-key calc-mode-map (kbd "Z"))
-   "a" (lookup-key calc-mode-map (kbd "a"))
-   "b" (lookup-key calc-mode-map (kbd "b"))
-   "c" (lookup-key calc-mode-map (kbd "c"))
-   "D" (lookup-key calc-mode-map (kbd "d"))
-   "f" (lookup-key calc-mode-map (kbd "f"))
-   "g" (lookup-key calc-mode-map (kbd "g"))
-   "zj" (lookup-key calc-mode-map (kbd "j"))
-   "zk" (lookup-key calc-mode-map (kbd "k"))
-   "zl" (lookup-key calc-mode-map (kbd "l"))
-   "m" (lookup-key calc-mode-map (kbd "m"))
-   "r" (lookup-key calc-mode-map (kbd "r"))
-   "s" (lookup-key calc-mode-map (kbd "s"))
-   "t" (lookup-key calc-mode-map (kbd "t"))
-   "U" (lookup-key calc-mode-map (kbd "u"))
-   "v" (lookup-key calc-mode-map (kbd "v"))
-   "zz" (lookup-key calc-mode-map (kbd "z"))
+  ;;  "V" (lookup-key calc-mode-map (kbd "V"))
+  ;;  "Y" (lookup-key calc-mode-map (kbd "Y"))
+  ;;  "Z" (lookup-key calc-mode-map (kbd "Z"))
+  ;;  "a" (lookup-key calc-mode-map (kbd "a"))
+  ;;  "b" (lookup-key calc-mode-map (kbd "b"))
+  ;;  "c" (lookup-key calc-mode-map (kbd "c"))
+  ;;  "D" (lookup-key calc-mode-map (kbd "d"))
+  ;;  "f" (lookup-key calc-mode-map (kbd "f"))
+  ;;  "g" (lookup-key calc-mode-map (kbd "g"))
+  ;;  "zj" (lookup-key calc-mode-map (kbd "j"))
+  ;;  "zk" (lookup-key calc-mode-map (kbd "k"))
+  ;;  "zl" (lookup-key calc-mode-map (kbd "l"))
+  ;;  "m" (lookup-key calc-mode-map (kbd "m"))
+  ;;  "r" (lookup-key calc-mode-map (kbd "r"))
+  ;;  "s" (lookup-key calc-mode-map (kbd "s"))
+  ;;  "t" (lookup-key calc-mode-map (kbd "t"))
+  ;;  "U" (lookup-key calc-mode-map (kbd "u"))
+  ;;  "v" (lookup-key calc-mode-map (kbd "v"))
+  ;;  "zz" (lookup-key calc-mode-map (kbd "z"))
 
-   ;; quit
-   ;; "ZQ" 'quit-window ; TODO: Rebind "Z"?
-   ;; "ZZ" 'quit-window ; TODO: Rebind "Z"?
-   "q" 'calc-quit)
+  ;;  ;; quit
+  ;;  ;; "ZQ" 'quit-window ; TODO: Rebind "Z"?
+  ;;  ;; "ZZ" 'quit-window ; TODO: Rebind "Z"?
+  ;;  "q" 'calc-quit)
 
-  (:keymaps '(calc-mode-map)
-   :states '(visual)
-   "d" 'calc-kill-region))
+  ;; (:keymaps '(calc-mode-map)
+  ;;  :states '(visual)
+  ;;  "d" 'calc-kill-region)
+  )
 
 (use-package openwith
   :ensure t
