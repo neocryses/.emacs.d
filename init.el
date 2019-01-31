@@ -88,6 +88,47 @@ Fundamental-mode, and disable the undo"
     (fundamental-mode)))
 (add-hook 'find-fle-hook 'find-file-large-file-hook)
 
+;;;; Utility macro
+
+(defmacro let-coding-for-rw (fun coding)
+  "Utility macro to create functions to deal with coding system problems"
+  (let* ((read-coding (car coding))
+         (write-coding (cdr coding))
+         (read-name (symbol-name read-coding))
+         (write-name (symbol-name write-coding))
+         (suffix "-\\(mac\\|dos\\|unix\\)")
+         ;; (bind-name
+         ;;  (if (eql 1 (length (delete-dups (mapcar (lambda (name)
+         ;;                                            (funcall #'replace-regexp-in-string
+         ;;                                                     suffix "" name)) (list read-name write-name))))
+         ;;           )
+         ;;      read-name
+         ;;    (concat read-name "-" write-name)))
+         (bind-name
+          (if (eql 1 (length (delete-dups
+                              (list read-name write-name))))
+              read-name
+            (concat read-name "-" write-name)))
+         (fun-name (intern (format "let-%s-for-rw" bind-name)))
+         (doc (format "Advice function to let bind coding system to %s for ORIG-FUN."
+                      coding)))
+    `(progn (defun ,fun-name (orig-fun &rest args)
+              ,doc
+              (let ((coding-system-for-read ',read-coding)
+                    (coding-system-for-write ',write-coding))
+                ;; (message (concat "defun was successful!" ,(symbol-name orig-fun) ,(symbol-name write-coding)))
+                (apply orig-fun args)))
+            (advice-add ,fun :around #',fun-name))))
+(let-coding-for-rw 'projectile-files-via-ext-command (utf-8-dos . utf-8-unix))
+;; (replace-regexp-in-string "-\\(mac\\|dos\\|unix\\)" "" "utf-8-dos")
+
+;; (setq test-var-var (nthcdr 0 '(utf-8-dos . utf-8-unix)))
+;; (mapcar (lambda (name) (funcall #'replace-regexp-in-string
+;;                                 "-\\(mac\\|dos\\|unix\\)" "" name)) '("utf-8-dos" "utf-8-unix"))
+;; '("utf-8" (symbol-name 'utf-8-unix))
+;; (delq nil (delete-dups (list "foo" "bar" nil "moo" "bar" "moo" nil "affe")))
+;; (length (delete-dups '("foo" "foo")))
+
 ;;; Libraries
 
 ;;;; Benchmarking
@@ -152,15 +193,15 @@ _-_: out
 "
     ("+" text-scale-increase)
     ("-" text-scale-decrease)
-    ("q" nil "cancel"))
+    ("q" nil "quit hydra"))
 
   (defhydra hydra-windows (:color pink
                            :hint nil)
     "
-_h_: move left   _H_: move window left  _<_: Decrease width
-_j_: move down   _J_: move window down  _>_: Increase width
-_k_: move up     _K_: move window up    _-_: Decrease height
-_l_: move right  _L_: move window right _+_: Increase height
+_h_: Move left   _H_: Move window left  _<_: Decrease width   _c_: Close window
+_j_: Move down   _J_: Move window down  _>_: Increase width
+_k_: Move up     _K_: Move window up    _-_: Decrease height
+_l_: Move right  _L_: Move window right _+_: Increase height
 "
     ("h" evil-window-left)
     ("j" evil-window-down)
@@ -174,7 +215,8 @@ _l_: move right  _L_: move window right _+_: Increase height
     (">" evil-window-increase-width)
     ("-" evil-window-decrease-height)
     ("+" evil-window-increase-height)
-    ("q" nil "cancel"))
+    ("c" evil-window-delete)
+    ("q" nil "quit hydra"))
   :general
   (:states '(normal visual)
    :keymaps '(override)
@@ -208,7 +250,11 @@ _l_: move right  _L_: move window right _+_: Increase height
     (set-terminal-coding-system 'cp932)
     ;; (setq default-process-coding-system '(undecided-dos . utf-8-unix))
     (setq default-process-coding-system '(undecided-dos . cp932-unix))
-    (add-to-list 'process-coding-system-alist '("[cC][mM][dD][pP][rR][oO][xX][yY]" . (utf-8-dos . utf-8-unix)))
+
+    ;; TODO: Create an advice to make the following line obsolete
+    ;; (add-to-list 'process-coding-system-alist '("[cC][mM][dD][pP][rR][oO][xX][yY]" . (utf-8-dos . utf-8-unix)))
+
+    (add-to-list 'process-coding-system-alist '("rg" . (utf-8-dos . utf-8-unix)))
     (add-to-list 'process-coding-system-alist '("gtags" . (cp932-dos . cp932-unix))))
   ;; Encoding priority
   (set-charset-priority 'ascii 'japanese-jisx0208 'latin-jisx0201
@@ -1232,7 +1278,23 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
              helm-ag-pop-stack
              helm-ag-clear-stack)
   :config
-  (setq helm-ag-base-command "rg --no-heading"))
+  (setq helm-ag-base-command "rg --vimgrep --no-heading")
+  ;; TODO: needs cleanup
+  (when *is-win*
+    (setq helm-ag-base-command "rg --vimgrep --no-heading --encoding ms932")
+    ;; (setq helm-ag-base-command "rg --no-heading --encoding sjis")
+    ;; (setq helm-ag-base-command
+    ;;       (concat helm-ag-base-command
+    ;;               (cond ((eq 'utf-8-dos buffer-file-coding-system)
+    ;;                      " --encoding utf-8")
+    ;;                     ((eq 'utf-8-unix buffer-file-coding-system)
+    ;;                      " --encoding utf-8")
+    ;;                     ((eq 'cp932-dos buffer-file-coding-system)
+    ;;                      " --encoding cp932")
+    ;;                     ((eq 'cp932-unix buffer-file-coding-system)
+    ;;                      " --encoding cp932")))
+    ;;       ))
+    ))
 
 (use-package helm-descbinds
   :ensure t
@@ -1417,6 +1479,27 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t
   :config
   (column-number-mode 1))
+
+(use-package button
+  :ensure nil
+  :init
+  ;; TODO: Following command doesn't work unfortunately
+  (defun eab/push-button-on-file-same-window ()
+    (interactive)
+    (let ((cwc (current-window-configuration))
+          (hb (current-buffer))
+          (file? (button-get (button-at (point)) 'help-args)))
+      (funcall
+       `(lambda ()
+          (defun eab/push-button-on-file-same-window-internal ()
+            (if (> (length ',file?) 1)
+                (let ((cb (current-buffer)))
+                  (set-window-configuration ,cwc)
+                  (switch-to-buffer cb)
+                  (kill-buffer ,hb)))))))
+    (call-interactively 'push-button)
+    (run-with-timer 0.01 nil 'eab/push-button-on-file-same-window-internal))
+  )
 
 (use-package calc
   :ensure nil
