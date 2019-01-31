@@ -110,7 +110,7 @@ Fundamental-mode, and disable the undo"
               read-name
             (concat read-name "-" write-name)))
          (fun-name (intern (format "let-%s-for-rw" bind-name)))
-         (doc (format "Advice function to let bind coding system to %s for ORIG-FUN."
+         (doc (format "Advice function to let bind coding-system for read and write to %s for ORIG-FUN."
                       coding)))
     `(progn (defun ,fun-name (orig-fun &rest args)
               ,doc
