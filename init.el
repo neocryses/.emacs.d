@@ -91,38 +91,57 @@ Fundamental-mode, and disable the undo"
 ;;;; Utility macro
 
 (defmacro let-coding-for-rw (fun coding)
-  "Utility macro to create functions to deal with coding system problems"
+  "Utility macro to create functions to deal with coding system problems.
+The macro defines function to be used with advice-add which
+let binds read-coding and write-coding variables according to CODING.
+It will then evaluate advice-add around FUN with the defined function."
   (let* ((read-coding (car coding))
          (write-coding (cdr coding))
          (read-name (symbol-name read-coding))
          (write-name (symbol-name write-coding))
-         (suffix "-\\(mac\\|dos\\|unix\\)")
-         ;; (bind-name
-         ;;  (if (eql 1 (length (delete-dups (mapcar (lambda (name)
-         ;;                                            (funcall #'replace-regexp-in-string
-         ;;                                                     suffix "" name)) (list read-name write-name))))
-         ;;           )
-         ;;      read-name
-         ;;    (concat read-name "-" write-name)))
+         (suffix "\\(mac\\|dos\\|unix\\)")
          (bind-name
           (if (eql 1 (length (delete-dups
-                              (list read-name write-name))))
+                              '(read-name write-name))))
               read-name
-            (concat read-name "-" write-name)))
+            (concat read-name "-"
+                    (if (string-match-p suffix read-name)
+                        (replace-regexp-in-string
+                         (replace-regexp-in-string suffix "" read-name)
+                         "" write-name)
+                      write-name))))
          (fun-name (intern (format "let-%s-for-rw" bind-name)))
-         (doc (format "Advice function to let bind coding-system for read and write to %s for ORIG-FUN."
-                      coding)))
-    `(progn (defun ,fun-name (orig-fun &rest args)
-              ,doc
-              (let ((coding-system-for-read ',read-coding)
-                    (coding-system-for-write ',write-coding))
-                ;; (message (concat "defun was successful!" ,(symbol-name orig-fun) ,(symbol-name write-coding)))
-                (apply orig-fun args)))
+         (doc (format "Advice function to let bind `coding-system-for-read' and `coding-system-for-write'
+to %s and %s respectively for ORIG-FUN."
+                      read-name write-name)))
+    `(progn (unless (fboundp ',fun-name)
+              (defun ,fun-name (orig-fun &rest args)
+                ,doc
+                (let ((coding-system-for-read ',read-coding)
+                      (coding-system-for-write ',write-coding))
+                  (apply orig-fun args))))
             (advice-add ,fun :around #',fun-name))))
-(let-coding-for-rw 'projectile-files-via-ext-command (utf-8-dos . utf-8-unix))
-;; (replace-regexp-in-string "-\\(mac\\|dos\\|unix\\)" "" "utf-8-dos")
 
-;; (setq test-var-var (nthcdr 0 '(utf-8-dos . utf-8-unix)))
+;; (let ((suffix "\\(mac\\|dos\\|unix\\)")
+;;       (read-name "utf-8-dos")
+;;       (write-name "utf-8"))
+;;   (if (eql 1 (length (delete-dups
+;;                       (list read-name write-name))))
+;;       read-name
+;;     (concat read-name "-"
+;;             (if (string-match-p suffix read-name)
+;;                 (replace-regexp-in-string
+;;                  (replace-regexp-in-string suffix "" read-name)
+;;                  "" write-name)
+;;               write-name))))
+
+;; (let ((suffix "\\(mac\\|dos\\|unix\\)")
+;;       (read-name "utf-8-dos")
+;;       (write-name "utf-8"))
+;;   (if (string-match-p suffix write-name)
+;;       "matched!"
+;;     "no match."))
+
 ;; (mapcar (lambda (name) (funcall #'replace-regexp-in-string
 ;;                                 "-\\(mac\\|dos\\|unix\\)" "" name)) '("utf-8-dos" "utf-8-unix"))
 ;; '("utf-8" (symbol-name 'utf-8-unix))
@@ -250,10 +269,6 @@ _l_: Move right  _L_: Move window right _+_: Increase height
     (set-terminal-coding-system 'cp932)
     ;; (setq default-process-coding-system '(undecided-dos . utf-8-unix))
     (setq default-process-coding-system '(undecided-dos . cp932-unix))
-
-    ;; TODO: Create an advice to make the following line obsolete
-    ;; (add-to-list 'process-coding-system-alist '("[cC][mM][dD][pP][rR][oO][xX][yY]" . (utf-8-dos . utf-8-unix)))
-
     (add-to-list 'process-coding-system-alist '("rg" . (utf-8-dos . utf-8-unix)))
     (add-to-list 'process-coding-system-alist '("gtags" . (cp932-dos . cp932-unix))))
   ;; Encoding priority
@@ -386,6 +401,11 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 
 (defvar ja-default-font-rescale nil
   "Rescaling value for Japanese characters")
+
+;; TODO: Introduce a variable for font-family to be used
+;; for the display of special characters.
+;; Current settings works for mac, but the font I use for
+;; windows has the whitespace-mode's ?\u0183 as double width.
 
 (cond (*is-win*
        (setq default-font-family "Myrica M")
@@ -610,7 +630,8 @@ _l_: Move right  _L_: Move window right _+_: Increase height
   (setq evil-search-module 'evil-search)
   :config
   (evil-mode 1)
-  (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
+  (modify-syntax-entry ?_ "w")
+  ;; (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
 
   (evil-define-text-object evil-entire-entire-buffer (count &optional beg end type)
     "Select entire buffer"
@@ -656,6 +677,8 @@ If ARG is empty, maximize the current window width."
               (evil-window-set-width n))
           (evil-window-decrease-width (- n))))))
   (evil-ex-define-cmd "vres[ize]" 'evil-ex-vresize)
+
+  (evil-ex-define-cmd "bd[elete]" 'kill-current-buffer)
 
   (defmacro define-and-bind-quoted-text-object (name key start-regex end-regex)
     (let ((inner-name (make-symbol (concat "evil-inner-" name)))
@@ -732,6 +755,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package evil-goggles
   :ensure t
+  :delight evil-goggles-mode
   :config
   (add-to-list 'evil-goggles--commands '(lispyville-yank :face evil-goggles-yank-face :switch evil-goggles-enable-yank :advice evil-goggles--generic-async-advice))
   (add-to-list 'evil-goggles--commands '(lispyville-change :face evil-goggles-change-face :switch evil-goggles-enable-change :advice evil-goggles--generic-blocking-advice))
@@ -805,8 +829,20 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer t)
 
 (use-package rg
+  :disabled
   :ensure t
-  :commands (rg))
+  :commands (rg)
+  :config
+  (when *is-win*
+    (setq rg-command-line-flags '("--encoding ms932"))))
+
+(use-package deadgrep
+  :ensure t
+  :commands (deadgrep)
+  ;; :config
+  ;; (when *is-win*
+  ;;   (let-coding-for-rw 'deadgrep--start (utf-8-dos . utf-8-unix)))
+  )
 
 ;;;; Scrolling
 
@@ -828,7 +864,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
                         ("*Backtrace*" :size 20 :select nil)
                         ("*Warnings*"  :size 12 :select nil :autofit t)
                         ("*Messages*"  :size 12 :select nil)
-                        ("*Help*" :same t :inhibit-window-quit t :size 20 :select t)
+                        ;; ("*Help*" :same t :inhibit-window-quit t :size 20 :select t)
+                        ("*Help*" :size 20 :select t)
                         (apropos-mode :size 0.3)))
   (shackle-mode 1))
 
@@ -861,7 +898,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (defun dired-buffer-file-parent ()
     "Opens dired in the parent directory of the current buffer."
     (interactive)
-    (dired (file-name-directory buffer-file-name)))
+    (dired default-directory))
 
   (setq dired-use-ls-dired nil)
 
@@ -1281,20 +1318,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq helm-ag-base-command "rg --vimgrep --no-heading")
   ;; TODO: needs cleanup
   (when *is-win*
-    (setq helm-ag-base-command "rg --vimgrep --no-heading --encoding ms932")
-    ;; (setq helm-ag-base-command "rg --no-heading --encoding sjis")
-    ;; (setq helm-ag-base-command
-    ;;       (concat helm-ag-base-command
-    ;;               (cond ((eq 'utf-8-dos buffer-file-coding-system)
-    ;;                      " --encoding utf-8")
-    ;;                     ((eq 'utf-8-unix buffer-file-coding-system)
-    ;;                      " --encoding utf-8")
-    ;;                     ((eq 'cp932-dos buffer-file-coding-system)
-    ;;                      " --encoding cp932")
-    ;;                     ((eq 'cp932-unix buffer-file-coding-system)
-    ;;                      " --encoding cp932")))
-    ;;       ))
-    ))
+    (setq helm-ag-base-command "rg --vimgrep --no-heading --encoding ms932")))
 
 (use-package helm-descbinds
   :ensure t
@@ -1365,6 +1389,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :config
 
   (when *is-win*
+    (let-coding-for-rw 'projectile-files-via-ext-command (utf-8-dos . utf-8-unix))
+
     (defun win-to-unix-path (path)
       "Convert windows style path to unix style path"
       (subst-char-in-string ?\\ ?/ path))
@@ -1374,6 +1400,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
       (mapcar 'win-to-unix-path
               (apply orig-fun args)))
 
+    ;; Add depth property to make it outermost
     (advice-add 'projectile-files-via-ext-command :around #'win-to-unix-path-list))
 
   (projectile-global-mode)
@@ -1877,6 +1904,7 @@ Lisp function does not specify a special indentation."
 
 ;;;; Org
 
+;; Maybe add org-download
 (use-package org
   :ensure org-plus-contrib
   :defer .3
@@ -1891,7 +1919,9 @@ Lisp function does not specify a special indentation."
         org-edit-src-content-indentation 0
         org-src-fontify-natively t
         org-src-tab-acts-natively t
-        org-hide-leading-stars t)
+        org-hide-leading-stars t
+        org-startup-folded nil)
+  (setq org-agenda-inhibit-startup t)
   (add-to-list 'org-file-apps '("\\.xls\\'" . default))
   (add-hook 'org-mode-hook (lambda () (modify-syntax-entry ?_ "w")))
   (setq org-capture-templates
