@@ -92,8 +92,10 @@ Fundamental-mode, and disable the undo"
 
 (defmacro let-coding-for-rw (fun coding)
   "Utility macro to create functions to deal with coding system problems.
+
 The macro defines function to be used with advice-add which
 let binds read-coding and write-coding variables according to CODING.
+
 It will then evaluate advice-add around FUN with the defined function."
   (let* ((read-coding (car coding))
          (write-coding (cdr coding))
@@ -449,111 +451,6 @@ _l_: Move right  _L_: Move window right _+_: Increase height
         (add-to-list 'face-font-rescale-alist (cons ja-font-family ja-default-font-rescale))))))
 (add-hook 'after-init-hook #'set-font)
 (add-hook 'after-make-frame-functions #'set-font)
-
-;; (defun set-font (&optional frame)
-;;   (when frame
-;;     (select-frame frame))
-;;   (when (display-graphic-p)
-;;     (let* ((font-family "Operator Mono SSm")
-;;            (font-size 11)
-;;            (font-height (* font-size 10))
-;;            (jp-font-family "Ricty Discord"))
-;;       (set-face-attribute 'default nil :family font-family :height font-height)
-;;       (let ((name (frame-parameter nil 'font))
-;;             (font-spec (font-spec :family font-family))
-;;             (characters '((?\u00A0 . ?\u00FF) ; Latin-1
-;;                           (?\u0100 . ?\u017F) ; Latin Extended-A
-;;                           (?\u0180 . ?\u024F) ; Latin Extended-B
-;;                           (?\u0250 . ?\u02AF) ; IPA Extensions
-;;                           (?\u0370 . ?\u03FF))) ; Greek and Coptic
-;;             (jp-font-spec (font-spec :family jp-font-family))
-;;             (jp-characters '(katakana-jisx0201
-;;                              cp932-2-byte
-;;                              japanese-jisx0212
-;;                              japanese-jisx0213-2
-;;                              japanese-jisx0213.2004-1))) 
-;;         (dolist (character characters)
-;;           (set-fontset-font name character font-spec))
-;;         (dolist (jp-character jp-characters)
-;;           (set-fontset-font name jp-character jp-font-spec))
-;;         (add-to-list 'face-font-rescale-alist (cons jp-font-family 1.3))))))
-;; (add-hook 'after-init-hook #'set-font)
-;; (add-hook 'after-make-frame-functions #'set-font)
-
-;;;;; Version 4
-
-;; (when (eq system-type 'darwin)
-;;   (let* ((fontset-name "macos")
-;;          (size 11)
-;;          (asciifont "Operator Mono SSm")
-;;          (jpfont "Ricty Discord")
-;;          (font (format "%s-%d:weight=normal:slant=normal" asciifont size))
-;;          (fontspec (font-spec :family asciifont))
-;;          (jp-fontspec (font-spec :family jpfont))
-;;          (fsn (create-fontset-from-ascii-font font nil fontset-name)))
-;;     (set-fontset-font fsn 'japanese-jisx0213.2004-1 jp-fontspec)
-;;     (set-fontset-font fsn 'japanese-jisx0213-2 jp-fontspec)
-;;     (set-fontset-font fsn 'katakana-jisx0201 jp-fontspec) ; 半角カナ
-;;     (set-fontset-font fsn '(#x0080 . #x024F) fontspec) ; 分音符付きラテン
-;;     (set-fontset-font fsn '(#x0370 . #x03FF) fontspec)) ; ギリシャ文字
-
-;;   (when (eq system-type 'darwin)
-;;     (add-to-list 'default-frame-alist '(font . "fontset-macos")))
-
-;;   (dolist (elt '(
-;;                  ("Ricty Discord" . 1.3)
-;;                  ))
-;;     (add-to-list 'face-font-rescale-alist elt))
-
-;;   (set-face-font 'default "fontset-macos")) 
-
-;;;;; Version 3
-
-;; (defvar ef/font "Operator Mono SSm-11"
-;;   "Font to be used for English characters")
-
-;; (defvar ef/font-ja "Ricty Discord"
-;;   "Font to be used for Japanese characters")
-
-;; (defun ef/set-font (&optional frame)
-;;   (when frame
-;;     (select-frame frame))
-;;   (set-face-attribute 'default nil :font ef/font)
-;;   (dolist (charset '(kana han symbol cjk-misc bopomofo))
-;;     (set-fontset-font (frame-parameter nil 'font) charset
-;;                       (font-spec :family ef/font-ja :size 14))))
-;; (ef/set-font)
-;; (add-hook 'after-make-frame-functions #'ef/set-font)
-
-;;;;; Version 2
-
-;; Windows specific setting - here only temporarily
-;; (set-face-attribute 'default nil :font "Operator Mono SSm-10")
-;; (set-frame-font "Operator Mono SSm-10" nil t)
-
-;; 半角英字設定
-;; (set-face-attribute 'default nil :family "Myrica M" :height 90)
-
-;; 全角かな設定
-;; (set-fontset-font (frame-parameter nil 'font)
-;;                   'japanese-jisx0208
-;;                   (font-spec :family "Ricty Discord" :size 12))
-
-;; 半角ｶﾅ設定
-;; (set-fontset-font (frame-parameter nil 'font)
-;;                   'katakana-jisx0201
-;;                   (font-spec :family "Ricty Discord" :size 12))
-
-;;;;; Version 1
-
-;; Set the font for macOS
-;; (when (eq system-type 'darwin)
-;;   (add-to-list 'default-frame-alist '(font . "Operator Mono SSm-10")))
-
-;; Set the font for Windows
-;; (when (eq system-type 'windows-nt)
-;;   (set-face-attribute 'default nil :font "Myrica M-10")
-;;   (set-frame-font "Myrica M-10" nil t)) 
 
 ;;;; Disable unnecessary GUI elements
 
@@ -1183,6 +1080,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (setq company-dabbrev-code-modes t)
   (setq company-dabbrev-code-other-buffers 'all)
   (setq company-dabbrev-ignore-buffers "\\`\\'")
+  (setq company-idle-delay 0.5)
   (add-to-list 'company-backends '(company-capf company-dabbrev))
 
   :general
@@ -1498,6 +1396,9 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package files
   :ensure nil
   :config
+  ;; Disable auto insertion of final newline for work computers
+  ;; Because for some unknown reason, people in Japan never likes to
+  ;; end their files with newline...
   (when (member (system-name) work-computer-list)
     (setq require-final-newline nil)))
 
@@ -1774,7 +1675,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package elec-pair
   :ensure nil
-  :hook (prog-mode . electric-pair-mode))
+  :hook (prog-mode . electric-pair-mode)
+  :config
+  (defun inhibit-electric-pair-mode (char)
+    (minibufferp))
+  (setq electric-pair-inhibit-predicate #'inhibit-electric-pair-mode))
 
 ;; (use-package outorg
 ;;   :ensure t
@@ -1904,7 +1809,7 @@ Lisp function does not specify a special indentation."
 
 ;;;; Org
 
-;; Maybe add org-download
+;; TODO: Maybe add org-download
 (use-package org
   :ensure org-plus-contrib
   :defer .3
@@ -2064,13 +1969,6 @@ function to return a regular expression, or
   :ensure nil
   :init
   (setq-default major-mode 'text-mode))
-
-;;;; SQL
-
-(use-package sql-indent
-  :disabled
-  :ensure t
-  :defer t)
 
 ;;;; Web
 
