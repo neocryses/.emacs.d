@@ -2259,22 +2259,6 @@ The location of ODT styles.")
 
 ;;;***
 
-;;;### (autoloads "actual autoloads are elsewhere" "ox-ascii" "ox-ascii.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-ascii.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-ascii" '("org-ascii-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-beamer" "ox-beamer.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-beamer.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-beamer" '("org-beamer-")))
-
-;;;***
-
 ;;;### (autoloads nil "ox-bibtex" "ox-bibtex.el" (0 0 0 0))
 ;;; Generated autoloads from ox-bibtex.el
 
@@ -2344,22 +2328,6 @@ Return output file's name.
 ;;; Generated autoloads from ox-groff.el
 
 (if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-groff" '("org-groff-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-html" "ox-html.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-html.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-html" '("org-html-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-icalendar"
-;;;;;;  "ox-icalendar.el" (0 0 0 0))
-;;; Generated autoloads from ox-icalendar.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-icalendar" '("org-icalendar-")))
 
 ;;;***
 
@@ -2466,51 +2434,11 @@ Return PDF file's name.
 
 ;;;***
 
-;;;### (autoloads "actual autoloads are elsewhere" "ox-latex" "ox-latex.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-latex.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-latex" '("org-latex-")))
-
-;;;***
-
 ;;;### (autoloads "actual autoloads are elsewhere" "ox-man" "ox-man.el"
 ;;;;;;  (0 0 0 0))
 ;;; Generated autoloads from ox-man.el
 
 (if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-man" '("org-man-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-md" "ox-md.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-md.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-md" '("org-md-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-odt" "ox-odt.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-odt.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-odt" '("org-odt-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-org" "ox-org.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-org.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-org" '("org-org-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-publish" "ox-publish.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-publish.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-publish" '("org-publish-")))
 
 ;;;***
 
@@ -2673,14 +2601,6 @@ the reports is done using the TaskJuggler GUI.
 \(fn &optional SUBTREEP VISIBLE-ONLY)" t nil)
 
 (if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-taskjuggler" '("org-taskjuggler-")))
-
-;;;***
-
-;;;### (autoloads "actual autoloads are elsewhere" "ox-texinfo" "ox-texinfo.el"
-;;;;;;  (0 0 0 0))
-;;; Generated autoloads from ox-texinfo.el
-
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "ox-texinfo" '("org-texinfo-")))
 
 ;;;***
 

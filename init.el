@@ -193,6 +193,9 @@ to %s and %s respectively for ORIG-FUN."
    "o" '(:ignore t :which-key "Org")
    "h" '(:ignore t :which-key "Help")
    "b" '(:ignore t :which-key "Buffer")
+   "n" '(:ignore t :which-key "Narrow")
+   "w" '(:ignore t :which-key "Windows")
+   "t" '(:ignore t :which-key "Toggle")
    "p" '(:ignore t :which-key "Project")))
 
 ;;;; Hydra
@@ -389,8 +392,6 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 (setq-default frame-inhibit-implied-resize t)
 
 ;;;; Font settings
-
-;;;;; Version 5
 
 (defvar default-font-family nil
   "Font to be used for English characters")
@@ -755,15 +756,15 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :defer .3
   :config
   (setq shackle-default-alignment 'below
-        shackle-default-size 8
+        shackle-default-size 0.33
         shackle-rules '(("*compilation*" :size 0.25 :select nil)
                         ("*info*" :size 0.5 :select t)
                         ("*Backtrace*" :size 20 :select nil)
                         ("*Warnings*"  :size 12 :select nil :autofit t)
                         ("*Messages*"  :size 12 :select nil)
                         ;; ("*Help*" :same t :inhibit-window-quit t :size 20 :select t)
-                        ("*Help*" :size 20 :select t)
-                        (apropos-mode :size 0.3)))
+                        ("*Help*" :popup t :size 0.20 :align 'below)
+                        ))
   (shackle-mode 1))
 
 ;;;; Diff
@@ -1268,8 +1269,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
     ;;         (helm-gtags--remove-carrige-returns)
     ;;         (when detail
     ;;           (helm-gtags--show-detail))))))
-
-    
     ))
 
 (use-package ggtags
@@ -1674,6 +1673,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 ;;   (load-theme 'leuven t))
 
 (use-package elec-pair
+  :disabled t
   :ensure nil
   :hook (prog-mode . electric-pair-mode)
   :config
@@ -1709,6 +1709,10 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure t
   :defer t
   :commands vlf-mode)
+
+(use-package try
+  :ensure t
+  :commands (try))
 
 ;;;; Emacs lisp
 
@@ -1798,9 +1802,7 @@ Lisp function does not specify a special indentation."
 (use-package lispy
   :ensure t
   :delight lispy-mode
-  :hook (emacs-lisp-mode . lispy-mode)
-  :config
-  (lispy-set-key-theme '(paredit c-digits)))
+  :hook (emacs-lisp-mode . lispy-mode))
 
 (use-package lispyville
   :ensure t
