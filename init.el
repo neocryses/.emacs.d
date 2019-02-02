@@ -697,6 +697,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure t
   :defer t
   :config
+  (setq evil-visualstar/persistent t)
   (global-evil-visualstar-mode))
 
 ;;;; Indentation
