@@ -2016,3 +2016,10 @@ function to return a regular expression, or
   :defer t
   :mode (("\\.pu\\'" . plantuml-mode)
          ("\\.plantuml\\'" . plantuml-mode)))
+
+;;;; Vimscript
+
+(use-package vimrc-mode
+  :ensure t
+  :defer t
+  :mode (("\\.vim\\(rc\\)?\\'" . vimrc-mode)))
