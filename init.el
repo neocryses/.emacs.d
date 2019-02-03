@@ -813,11 +813,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
         shackle-default-size 0.33
         shackle-rules '(("*compilation*" :size 0.25 :select nil)
                         ("*info*" :size 0.5 :select t)
-                        ("*Backtrace*" :size 20 :select nil)
-                        ("*Warnings*"  :size 12 :select nil :autofit t)
-                        ("*Messages*"  :size 12 :select nil)
+                        ("*Backtrace*" :size 33 :select nil)
+                        ("*Warnings*"  :size 33 :select nil :autofit t)
+                        ("*Messages*"  :size 33 :select nil)
                         ;; ("*Help*" :same t :inhibit-window-quit t :size 20 :select t)
-                        ("*Help*" :popup t :size 0.20 :align 'below)
+                        ("*Help*" :popup t :size 0.33 :align 'below)
                         ))
   (shackle-mode 1))
 
