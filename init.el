@@ -513,6 +513,13 @@ _l_: Move right  _L_: Move window right _+_: Increase height
   :init
   (load-theme 'doom-one-light t))
 
+;;;; Indent Guide
+
+(use-package highlight-indent-guides
+  :ensure t
+  :config
+  (setq highlight-indent-guides-method 'character))
+
 ;;; Packages
 
 ;;;; Evil
@@ -683,6 +690,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (:states '(normal visual)
    :prefix global-leader
    "tn" 'evil-ex-nohighlight))
+
+(use-package evil-matchit
+  :ensure t
+  :config
+  (global-evil-matchit-mode 1))
 
 ;; This package needs evil-want-keybinding set to nil on evil init
 (use-package evil-collection
@@ -1873,8 +1885,8 @@ Lisp function does not specify a special indentation."
         org-src-fontify-natively t
         org-src-tab-acts-natively t
         org-hide-leading-stars t
-        org-startup-folded nil)
-  (setq org-agenda-inhibit-startup t)
+        org-startup-folded nil
+        org-agenda-inhibit-startup t)
   (add-to-list 'org-file-apps '("\\.xls\\'" . default))
   (add-hook 'org-mode-hook (lambda () (modify-syntax-entry ?_ "w")))
   (setq org-capture-templates
@@ -1894,6 +1906,7 @@ Lisp function does not specify a special indentation."
      (plantuml . t)
      (shell . t)
      (sql . t)))
+  (add-hook 'dired-mode-hook 'org-download-enable)
   :general
   (:states '(normal visual)
    :prefix global-leader
@@ -1912,6 +1925,11 @@ Lisp function does not specify a special indentation."
    "vo" 'org-overview
    "vc" 'org-content
    "va" 'outline-show-all))
+
+(use-package org-download
+  :ensure t
+  :config
+  (setq-default org-download-image-dir "~/org/pictures"))
 
 (use-package ob-sql-mode
   :ensure t
