@@ -381,6 +381,7 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 ;;         mac-command-modifier 'super))
 
 ;; Advice to show the last-command on the command line
+;; Uncomment following lines to enable.
 ;; (defadvice call-interactively (after show-last-command activate)
 ;;   "Shows the interactive command that was just run in the message area."
 ;;   (unless (eq major-mode 'minibuffer-inactive-mode)
@@ -526,10 +527,50 @@ _l_: Move right  _L_: Move window right _+_: Increase height
   (setq evil-want-Y-yank-to-eol t)
   (setq evil-auto-balance-windows nil)
   (setq evil-search-module 'evil-search)
+
   :config
   (evil-mode 1)
   (modify-syntax-entry ?_ "w")
   ;; (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
+
+  (defvar last-post-command-position nil
+    "Holds the cursor position from the last run of post-command-hooks.")
+
+  ;; Following code replicates vim-slash's behavior
+  ;; Excluding it's star-search behavior.
+  ;; TODO: Implement vim-slash's star-search behavior.
+  (progn (defun record-point ()
+           "Records current point of cursor for later use"
+           (setq tmp--pre-point (point)))
+
+         (defun evil-ex-nohighlight-advice ()
+           "Disable a function to disable evil-ex-search hightlight if it is active"
+           (let ((target-commands '(exit-minibuffer
+                                    evil-ex-search-forward
+                                    evil-ex-search-backward
+                                    evil-ex-search-word-forward
+                                    evil-ex-search-word-backward
+                                    evil-ex-search-unbounded-word-forward
+                                    evil-ex-search-unbounded-word-backward
+                                    evil-ex-search-next
+                                    evil-ex-search-previous)))
+             (when (and (evil-ex-hl-active-p 'evil-ex-search)
+                        (not (eq tmp--pre-point (point)))
+                        (not (memq this-command target-commands)))
+               (evil-ex-nohighlight))))
+
+         (add-hook 'pre-command-hook #'record-point)
+         (add-hook 'post-command-hook #'evil-ex-nohighlight-advice))
+
+  ;; (defun evil-ex-nohighlight-advice (orig-fun &rest args)
+  ;;   "Disable a function to disable evil-ex-search hightlight if it is active"
+  ;;   (when (evil-ex-hl-active-p 'evil-ex-search)
+  ;;     (evil-ex-nohighlight)))
+  ;; (read-)
+  ;; (advice-add 'evil-line-move :before #'evil-ex-nohighlight-advice)
+
+  ;; (mapc (lambda (fun) (advice-add fun :around #'evil-ex-nohighlight-advice))
+  ;;       '())
 
   (evil-define-text-object evil-entire-entire-buffer (count &optional beg end type)
     "Select entire buffer"
@@ -1228,10 +1269,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package helm-swoop
   :ensure t
   :defer .3
+  :config
+  (setq helm-swoop-use-line-number-face t
+        helm-swoop-speed-or-color t)
   :general
   (:states '(normal visual)
+   :keymaps '(override)
    :prefix global-leader
-   "/" 'helm-swoop))
+   "/" 'helm-swoop-without-pre-input))
 
 ;;;; Navigation
 
