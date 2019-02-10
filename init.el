@@ -702,7 +702,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure t
   :demand
   :config
-  (evil-collection-init '(simple calc calendar comint custom ediff occur xref simple term)))
+  (evil-collection-init '(simple calc calendar comint custom ediff occur xref simple term dead-grep)))
 
 (use-package evil-goggles
   :ensure t
@@ -1463,7 +1463,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure nil
   :defer t
   :config
-  (column-number-mode 1))
+  (column-number-mode 1)
+  (setq save-interprogram-paste-before-kill t))
 
 (use-package button
   :ensure nil
