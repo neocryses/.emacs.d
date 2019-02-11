@@ -1092,6 +1092,9 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 ;;;; Line Numbers
 
+;; There is a major bug with display-line-numbers and cjk letters
+;; Enabling display-line-numbers-mode will cause horizontal scrolling with
+;; cjk letters to spaz out on hscroll-step 1.
 (use-package display-line-numbers
   :ensure nil
   :unless (version< emacs-version "26.0")
