@@ -1,0 +1,2 @@
+;;; -*- no-byte-compile: t -*-
+(define-package "ob-sql-mode" "20190212.2055" "SQL code blocks evaluated by sql-mode" '((emacs "24.4")) :stars '(#("9" 0 1 (font-lock-face paradox-star-face))) :commit "49dac3b64f9eaebe9d406e398f95a40b2993e6d0" :keywords '("languages" "org" "org-babel" "sql") :authors '((nil . "Nik Clayton nik@google.com")) :maintainer '(nil . "Nik Clayton nik@google.com") :url "http://github.com/nikclayton/ob-sql-mode")

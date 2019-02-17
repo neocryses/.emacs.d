@@ -24,8 +24,8 @@
 ;;;; Constants
 
 (defconst *is-win* (memq system-type '(windows-nt ms-dos)))
-(defconst *is-mac* (eq system-type 'darwin)) 
-(defconst *is-linux* (eq system-type 'gnu/linux)) 
+(defconst *is-mac* (eq system-type 'darwin))
+(defconst *is-linux* (eq system-type 'gnu/linux))
 
 ;;;; Variables
 
@@ -239,6 +239,8 @@ _l_: Move right  _L_: Move window right _+_: Increase height
     (">" evil-window-increase-width)
     ("-" evil-window-decrease-height)
     ("+" evil-window-increase-height)
+    ("s" evil-window-split)
+    ("v" evil-window-vsplit)
     ("c" evil-window-delete)
     ("q" nil "quit hydra"))
   :general
@@ -445,7 +447,7 @@ _l_: Move right  _L_: Move window right _+_: Increase height
                              cp932-2-byte
                              japanese-jisx0212
                              japanese-jisx0213-2
-                             japanese-jisx0213.2004-1))) 
+                             japanese-jisx0213.2004-1)))
         (dolist (ja-character ja-characters)
           (set-fontset-font name ja-character ja-font-spec))
         (dolist (character characters)
@@ -534,8 +536,12 @@ _l_: Move right  _L_: Move window right _+_: Increase height
   (setq evil-want-Y-yank-to-eol t)
   (setq evil-auto-balance-windows nil)
   (setq evil-search-module 'evil-search)
+  ;; (setq evil-cross-lines t)
 
   :config
+  (when evil-want-C-u-scroll
+    (define-key universal-argument-map (kbd "C-u") nil))
+
   (evil-mode 1)
   (modify-syntax-entry ?_ "w")
   ;; (add-hook 'c-mode-common-hook (lambda () (modify-syntax-entry ?_ "w")))
@@ -680,7 +686,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
   (:keymaps '(evil-inner-text-objects-map)
    "e" 'evil-entire-entire-buffer)
-  
+
   ;; Exit out of insert state with "jk"
   (:states '(insert)
    "j" (general-key-dispatch 'self-insert-command
@@ -702,7 +708,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure t
   :demand
   :config
-  (evil-collection-init '(simple calc calendar comint custom ediff occur xref simple term dead-grep)))
+  (evil-collection-init '(simple calendar comint custom ediff occur xref simple term)))
 
 (use-package evil-goggles
   :ensure t
@@ -794,7 +800,17 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   ;; :config
   ;; (when *is-win*
   ;;   (let-coding-for-rw 'deadgrep--start (utf-8-dos . utf-8-unix)))
-  )
+  :general
+  (:keymaps '(deadgrep-mode-map)
+   :states '(normal visual)
+   [return] 'deadgrep-visit-result
+   "gr" 'deadgrep-restart
+   "C-j" 'deadgrep-forward
+   "C-k" 'deadgrep-backward
+   [tab] 'deadgrep-toggle-file-results
+   "q" 'quit-window
+   "ZZ" 'quit-window
+   "ZQ" 'evil-quit))
 
 ;;;; Scrolling
 
@@ -857,7 +873,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :general
   (:states '(normal visual)
    "-" 'dired-buffer-file-parent)
-  
+
   (:keymaps '(dired-mode-map)
    :states '(normal visual)
    "q" 'quit-window
@@ -1099,7 +1115,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure nil
   :unless (version< emacs-version "26.0")
   :hook ((prog-mode . display-line-numbers-mode)
-         (org-mode . (lambda () (setq display-line-numbers 'visual)))
+         (org-mode . (lambda () (setq display-line-numbers nil)))
          (markdown-mode . (lambda () (setq display-line-numbers 'visual))))
   :init
   (setq display-line-numbers-grow-only t
@@ -1415,6 +1431,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package magit
   :ensure t
+  :config
+  (setq magit-refresh-status-buffer nil)
   :general
   (:states '(normal visual)
    :prefix global-leader
@@ -1494,163 +1512,905 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure nil
   ;; :defer t
   :commands (calc)
-  ;; :config
-  ;; (require 'calc-ext)
+  :config
+  (require 'calc-ext)
 
-  ;; :general
-  ;; (:states '(normal visual)
-  ;;  "-" 'dired-buffer-file-parent)
-  
-  ;; (:keymaps '(calc-mode-map)
-  ;;  :states '(normal visual)
-  ;;  "0" 'calcDigit-start
-  ;;  "1" 'calcDigit-start
-  ;;  "2" 'calcDigit-start
-  ;;  "3" 'calcDigit-start
-  ;;  "4" 'calcDigit-start
-  ;;  "5" 'calcDigit-start
-  ;;  "6" 'calcDigit-start
-  ;;  "7" 'calcDigit-start
-  ;;  "8" 'calcDigit-start
-  ;;  "9" 'calcDigit-start
+  :general
+  (:states '(normal visual)
+   "-" 'dired-buffer-file-parent)
 
-  ;;  (kbd "<tab>") 'calc-roll-down
-  ;;  (kbd "S-<return>") 'calc-over
-  ;;  (kbd "<return>") 'calc-enter
-  ;;  (kbd "SPC") 'calc-enter
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   "0" 'calcDigit-start
+   "1" 'calcDigit-start
+   "2" 'calcDigit-start
+   "3" 'calcDigit-start
+   "4" 'calcDigit-start
+   "5" 'calcDigit-start
+   "6" 'calcDigit-start
+   "7" 'calcDigit-start
+   "8" 'calcDigit-start
+   "9" 'calcDigit-start
 
-  ;;  (kbd "C-x C-t") 'calc-transpose-lines
-  ;;  (kbd "C-M-d") 'calc-pop-above
-  ;;  (kbd "C-M-i") 'calc-roll-up
-  ;;  (kbd "M-RET") 'calc-last-args
-  ;;  (kbd "C-M-w") 'kill-ring-save
-  ;;  (kbd "M-%") 'calc-percent
-  ;;  (kbd "M-k") 'calc-copy-as-kill
-  ;;  (kbd "M-w") 'calc-copy-region-as-kill
-  ;;  (kbd "M-DEL") 'calc-pop-above
-  ;;  (kbd "M-m t") 'calc-total-algebraic-mode
-  ;;  (kbd "<delete>") 'calc-pop
-  ;;  (kbd "<mouse-2>") 'calc-yank
-  ;;  "x" 'calc-pop ; was "C-d".  TODO: Conflicts with calc-execute-extended-command.
-  ;;  "d" 'calc-kill                       ; was "C-k"
-  ;;  "u" 'calc-undo                       ; was "U"
-  ;;  "X" 'calc-call-last-kbd-macro        ; "@" is already used.
-  ;;  "pp" 'calc-yank                      ; was "C-y"
-  ;;  "pP" 'calc-copy-to-buffer            ; was "y"
+   (kbd "<tab>") 'calc-roll-down
+   (kbd "S-<return>") 'calc-over
+   (kbd "<return>") 'calc-enter
+   (kbd "SPC") 'calc-enter
 
-  ;;  (kbd "C-p") 'calc-precision          ; was "p"
+   (kbd "C-x C-t") 'calc-transpose-lines
+   (kbd "C-M-d") 'calc-pop-above
+   (kbd "C-M-i") 'calc-roll-up
+   (kbd "M-RET") 'calc-last-args
+   (kbd "C-M-w") 'kill-ring-save
+   (kbd "M-%") 'calc-percent
+   (kbd "M-k") 'calc-copy-as-kill
+   (kbd "M-w") 'calc-copy-region-as-kill
+   (kbd "M-DEL") 'calc-pop-above
+   (kbd "M-m t") 'calc-total-algebraic-mode
+   (kbd "<delete>") 'calc-pop
+   (kbd "<mouse-2>") 'calc-yank
+   "x" 'calc-pop ; was "C-d".  TODO: Conflicts with calc-execute-extended-command.
+   "d" 'calc-kill                       ; was "C-k"
+   "u" 'calc-undo                       ; was "U"
+   "X" 'calc-call-last-kbd-macro        ; "@" is already used.
+   "pp" 'calc-yank                      ; was "C-y"
+   "pP" 'calc-copy-to-buffer            ; was "y"
 
-  ;;  "?" 'calc-help
-  ;;  ;; "h" 'calc-help-prefix ; TODO: Rebind?
-  ;;  "i" 'calc-info
+   (kbd "C-p") 'calc-precision          ; was "p"
 
-  ;;  "\"" 'calc-auto-algebraic-entry
-  ;;  "$" 'calc-auto-algebraic-entry       ; TODO: No need for this one?
-  ;;  "'" 'calc-algebraic-entry
+   "?" 'calc-help
+   ;; "h" 'calc-help-prefix ; TODO: Rebind?
+   "i" 'calc-info
 
-  ;;  "!" 'calc-factorial
-  ;;  "#" 'calcDigit-start
-  ;;  "%" 'calc-mod
-  ;;  "&" 'calc-inv
-  ;;  "(" 'calc-begin-complex
-  ;;  ")" 'calc-end-complex
-  ;;  "*" 'calc-times
-  ;;  "+" 'calc-plus
-  ;;  "," 'calc-comma
-  ;;  "-" 'calc-minus
-  ;;  "." 'calcDigit-start
-  ;;  "/" 'calc-divide
-  ;;  ":" 'calc-fdiv
-  ;;  ";" 'calc-semi          ; TODO: Shall we really override `evil-ex'?
-  ;;  "<" 'calc-scroll-left
-  ;;  "=" 'calc-evaluate
-  ;;  ">" 'calc-scroll-right
-  ;;  "@" 'calcDigit-start
-  ;;  "A" 'calc-abs
-  ;;  "B" 'calc-log
-  ;;  "C" 'calc-cos
-  ;;  ;; "D" 'calc-redo             ; TODO: What's the purpose of this?  Bind to C-r?
-  ;;  "E" 'calc-exp
-  ;;  "F" 'calc-floor
-  ;;  "G" 'calc-argument
-  ;;  "H" 'calc-hyperbolic
-  ;;  "I" 'calc-inverse
-  ;;  "J" 'calc-conj
-  ;;  "K" 'calc-keep-args
-  ;;  "L" 'calc-ln
-  ;;  "M" 'calc-more-recursion-depth
-  ;;  "N" 'calc-eval-num
-  ;;  "O" 'calc-option
-  ;;  "P" 'calc-pi
-  ;;  "Q" 'calc-sqrt
-  ;;  "R" 'calc-round
-  ;;  "S" 'calc-sin
-  ;;  "T" 'calc-tan
-  ;;  "[" 'calc-begin-vector
-  ;;  "]" 'calc-end-vector
-  ;;  "\\" 'calc-idiv
-  ;;  "^" 'calc-power
-  ;;  "_" 'calcDigit-start
-  ;;  "`" 'calc-edit
-  ;;  "e" 'calcDigit-start
-  ;;  "n" 'calc-change-sign
-  ;;  "o" 'calc-realign
-  ;;  "w" 'calc-why
-  ;;  "x" 'calc-execute-extended-command ; TODO: Conflicts with calc-pop.
-  ;;  "|" 'calc-concat
-  ;;  "{" 'calc-scroll-down                ; TODO: Not necessary?
-  ;;  "}" 'calc-scroll-up                  ; TODO: Not necessary?
-  ;;  "~" 'calc-num-prefix
+   "\"" 'calc-auto-algebraic-entry
+   "$" 'calc-auto-algebraic-entry       ; TODO: No need for this one?
+   "'" 'calc-algebraic-entry
 
-  ;;  ;; "V" (lookup-key calc-mode-map (kbd "V"))
-  ;;  ;; "Y" (lookup-key calc-mode-map (kbd "Y"))
-  ;;  ;; "Z" (lookup-key calc-mode-map (kbd "Z"))
-  ;;  ;; "a" (lookup-key calc-mode-map (kbd "a"))
-  ;;  ;; "b" (lookup-key calc-mode-map (kbd "b"))
-  ;;  ;; "c" (lookup-key calc-mode-map (kbd "c"))
-  ;;  ;; "D" (lookup-key calc-mode-map (kbd "d"))
-  ;;  ;; "f" (lookup-key calc-mode-map (kbd "f"))
-  ;;  ;; "g" (lookup-key calc-mode-map (kbd "g"))
-  ;;  ;; "zj" (lookup-key calc-mode-map (kbd "j"))
-  ;;  ;; "zk" (lookup-key calc-mode-map (kbd "k"))
-  ;;  ;; "zl" (lookup-key calc-mode-map (kbd "l"))
-  ;;  ;; "m" (lookup-key calc-mode-map (kbd "m"))
-  ;;  ;; "r" (lookup-key calc-mode-map (kbd "r"))
-  ;;  ;; "s" (lookup-key calc-mode-map (kbd "s"))
-  ;;  ;; "t" (lookup-key calc-mode-map (kbd "t"))
-  ;;  ;; "U" (lookup-key calc-mode-map (kbd "u"))
-  ;;  ;; "v" (lookup-key calc-mode-map (kbd "v"))
-  ;;  ;; "zz" (lookup-key calc-mode-map (kbd "z"))
+   "!" 'calc-factorial
+   "#" 'calcDigit-start
+   "%" 'calc-mod
+   "&" 'calc-inv
+   "(" 'calc-begin-complex
+   ")" 'calc-end-complex
+   "*" 'calc-times
+   "+" 'calc-plus
+   "," 'calc-comma
+   "-" 'calc-minus
+   "." 'calcDigit-start
+   "/" 'calc-divide
+   ":" 'calc-fdiv
+   ";" 'calc-semi          ; TODO: Shall we really override `evil-ex'?
+   "<" 'calc-scroll-left
+   "=" 'calc-evaluate
+   ">" 'calc-scroll-right
+   "@" 'calcDigit-start
+   "A" 'calc-abs
+   "B" 'calc-log
+   "C" 'calc-cos
+   ;; "D" 'calc-redo             ; TODO: What's the purpose of this?  Bind to C-r?
+   "E" 'calc-exp
+   "F" 'calc-floor
+   "G" 'calc-argument
+   "H" 'calc-hyperbolic
+   "I" 'calc-inverse
+   "J" 'calc-conj
+   "K" 'calc-keep-args
+   "L" 'calc-ln
+   "M" 'calc-more-recursion-depth
+   "N" 'calc-eval-num
+   "O" 'calc-option
+   "P" 'calc-pi
+   "Q" 'calc-sqrt
+   "R" 'calc-round
+   "S" 'calc-sin
+   "T" 'calc-tan
+   "[" 'calc-begin-vector
+   "]" 'calc-end-vector
+   "\\" 'calc-idiv
+   "^" 'calc-power
+   "_" 'calcDigit-start
+   "`" 'calc-edit
+   "e" 'calcDigit-start
+   "n" 'calc-change-sign
+   "o" 'calc-realign
+   "w" 'calc-why
+   "x" 'calc-execute-extended-command ; TODO: Conflicts with calc-pop.
+   "|" 'calc-concat
+   "{" 'calc-scroll-down                ; TODO: Not necessary?
+   "}" 'calc-scroll-up                  ; TODO: Not necessary?
+   "~" 'calc-num-prefix
 
-  ;;  ;; "V" (lookup-key calc-mode-map (kbd "V"))
-  ;;  ;; "Y" (lookup-key calc-mode-map (kbd "Y"))
-  ;;  ;; "Z" (lookup-key calc-mode-map (kbd "Z"))
-  ;;  ;; "a" (lookup-key calc-mode-map (kbd "a"))
-  ;;  ;; "b" (lookup-key calc-mode-map (kbd "b"))
-  ;;  ;; "c" (lookup-key calc-mode-map (kbd "c"))
-  ;;  ;; "D" (lookup-key calc-mode-map (kbd "d"))
-  ;;  ;; "f" (lookup-key calc-mode-map (kbd "f"))
-  ;;  ;; "g" (lookup-key calc-mode-map (kbd "g"))
-  ;;  ;; "zj" (lookup-key calc-mode-map (kbd "j"))
-  ;;  ;; "zk" (lookup-key calc-mode-map (kbd "k"))
-  ;;  ;; "zl" (lookup-key calc-mode-map (kbd "l"))
-  ;;  ;; "m" (lookup-key calc-mode-map (kbd "m"))
-  ;;  ;; "r" (lookup-key calc-mode-map (kbd "r"))
-  ;;  ;; "s" (lookup-key calc-mode-map (kbd "s"))
-  ;;  ;; "t" (lookup-key calc-mode-map (kbd "t"))
-  ;;  ;; "U" (lookup-key calc-mode-map (kbd "u"))
-  ;;  ;; "v" (lookup-key calc-mode-map (kbd "v"))
-  ;;  ;; "zz" (lookup-key calc-mode-map (kbd "z"))
+   ;; quit
+   ;; "zz" 'calc-z-prefix-help
+   ;; "ZQ" 'quit-window ; TODO: Rebind "Z"?
+   ;; "ZZ" 'quit-window ; TODO: Rebind "Z"?
+   "q" 'calc-quit)
 
-  ;;  ;; quit
-  ;;  ;; "ZQ" 'quit-window ; TODO: Rebind "Z"?
-  ;;  ;; "ZZ" 'quit-window ; TODO: Rebind "Z"?
-  ;;  "q" 'calc-quit)
 
-  ;; (:keymaps '(calc-mode-map)
-  ;;  :states '(visual)
-  ;;  "d" 'calc-kill-region)
-  )
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "V"
+   "#" 'calc-set-cardinality
+   "&" 'calc-inv
+   "(" 'calc-vector-parens
+   ")" 'calc-matrix-brackets
+   "+" 'calc-remove-duplicates
+   "," 'calc-vector-commas
+   "-" 'calc-set-difference
+   "." 'calc-full-vectors
+   "/" 'calc-break-vectors
+   ":" 'calc-set-span
+   "<" 'calc-matrix-left-justify
+   "=" 'calc-matrix-center-justify
+   ">" 'calc-matrix-right-justify
+   "?" 'calc-v-prefix-help
+   "A" 'calc-apply
+   "C" 'calc-cross
+   "D" 'calc-mdet
+   "E" 'calc-set-enumerate
+   "F" 'calc-set-floor
+   "G" 'calc-grade
+   "H" 'calc-histogram
+   "I" 'calc-inner-product
+   "J" 'calc-conj-transpose
+   "K" 'calc-kron
+   "L" 'calc-mlud
+   "M" 'calc-map
+   "N" 'calc-cnorm
+   "O" 'calc-outer-product
+   "R" 'calc-reduce
+   "S" 'calc-sort
+   "T" 'calc-mtrace
+   "U" 'calc-accumulate
+   "V" 'calc-set-union
+   "X" 'calc-set-xor
+   "[" 'calc-vector-brackets
+   "]" 'calc-matrix-brackets
+   "^" 'calc-set-intersect
+   "a" 'calc-arrange-vector
+   "b" 'calc-build-vector
+   "c" 'calc-mcol
+   "d" 'calc-diag
+   "e" 'calc-expand-vector
+   "f" 'calc-vector-find
+   "h" 'calc-head
+   "i" 'calc-ident
+   "k" 'calc-cons
+   "l" 'calc-vlength
+   "m" 'calc-mask-vector
+   "n" 'calc-rnorm
+   "p" 'calc-pack
+   "r" 'calc-mrow
+   "s" 'calc-subvector
+   "t" 'calc-transpose
+   "u" 'calc-unpack
+   "v" 'calc-reverse-vector
+   "x" 'calc-index
+   "{" 'calc-vector-braces
+   "}" 'calc-matrix-brackets
+   "~" 'calc-set-complement)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "V"
+   "#" 'calc-set-cardinality
+   "&" 'calc-inv
+   "(" 'calc-vector-parens
+   ")" 'calc-matrix-brackets
+   "+" 'calc-remove-duplicates
+   "," 'calc-vector-commas
+   "-" 'calc-set-difference
+   "." 'calc-full-vectors
+   "/" 'calc-break-vectors
+   ":" 'calc-set-span
+   "<" 'calc-matrix-left-justify
+   "=" 'calc-matrix-center-justify
+   ">" 'calc-matrix-right-justify
+   "?" 'calc-v-prefix-help
+   "A" 'calc-apply
+   "C" 'calc-cross
+   "D" 'calc-mdet
+   "E" 'calc-set-enumerate
+   "F" 'calc-set-floor
+   "G" 'calc-grade
+   "H" 'calc-histogram
+   "I" 'calc-inner-product
+   "J" 'calc-conj-transpose
+   "K" 'calc-kron
+   "L" 'calc-mlud
+   "M" 'calc-map
+   "N" 'calc-cnorm
+   "O" 'calc-outer-product
+   "R" 'calc-reduce
+   "S" 'calc-sort
+   "T" 'calc-mtrace
+   "U" 'calc-accumulate
+   "V" 'calc-set-union
+   "X" 'calc-set-xor
+   "[" 'calc-vector-brackets
+   "]" 'calc-matrix-brackets
+   "^" 'calc-set-intersect
+   "a" 'calc-arrange-vector
+   "b" 'calc-build-vector
+   "c" 'calc-mcol
+   "d" 'calc-diag
+   "e" 'calc-expand-vector
+   "f" 'calc-vector-find
+   "h" 'calc-head
+   "i" 'calc-ident
+   "k" 'calc-cons
+   "l" 'calc-vlength
+   "m" 'calc-mask-vector
+   "n" 'calc-rnorm
+   "p" 'calc-pack
+   "r" 'calc-mrow
+   "s" 'calc-subvector
+   "t" 'calc-transpose
+   "u" 'calc-unpack
+   "v" 'calc-reverse-vector
+   "x" 'calc-index
+   "{" 'calc-vector-braces
+   "}" 'calc-matrix-brackets
+   "~" 'calc-set-complement)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "Z"
+   "#" 'calc-kbd-query
+   "'" 'calc-kbd-pop
+   "(" 'calc-kbd-for
+   ")" 'calc-kbd-end-for
+   "/" 'calc-kbd-break
+   ":" 'calc-kbd-else
+   "<" 'calc-kbd-repeat
+   "=" 'calc-kbd-report
+   ">" 'calc-kbd-end-repeat
+   "?" 'calc-shift-Z-prefix-help
+   "C" 'calc-user-define-composition
+   "D" 'calc-user-define
+   "E" 'calc-user-define-edit
+   "F" 'calc-user-define-formula
+   "G" 'calc-get-user-defn
+   "I" 'calc-user-define-invocation
+   "K" 'calc-user-define-kbd-macro
+   "P" 'calc-user-define-permanent
+   "S" 'calc-edit-user-syntax
+   "T" 'calc-timing
+   "U" 'calc-user-undefine
+   "[" 'calc-kbd-if
+   "]" 'calc-kbd-end-if
+   "`" 'calc-kbd-push
+   "{" 'calc-kbd-loop
+   "|" 'calc-kbd-else-if
+   "}" 'calc-kbd-end-loop)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "Z"
+   "#" 'calc-kbd-query
+   "'" 'calc-kbd-pop
+   "(" 'calc-kbd-for
+   ")" 'calc-kbd-end-for
+   "/" 'calc-kbd-break
+   ":" 'calc-kbd-else
+   "<" 'calc-kbd-repeat
+   "=" 'calc-kbd-report
+   ">" 'calc-kbd-end-repeat
+   "?" 'calc-shift-Z-prefix-help
+   "C" 'calc-user-define-composition
+   "D" 'calc-user-define
+   "E" 'calc-user-define-edit
+   "F" 'calc-user-define-formula
+   "G" 'calc-get-user-defn
+   "I" 'calc-user-define-invocation
+   "K" 'calc-user-define-kbd-macro
+   "P" 'calc-user-define-permanent
+   "S" 'calc-edit-user-syntax
+   "T" 'calc-timing
+   "U" 'calc-user-undefine
+   "[" 'calc-kbd-if
+   "]" 'calc-kbd-end-if
+   "`" 'calc-kbd-push
+   "{" 'calc-kbd-loop
+   "|" 'calc-kbd-else-if
+   "}" 'calc-kbd-end-loop)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "a"
+   "M-!" 'calc-logical-not
+   "M-\"" 'calc-expand-formula
+   "M-#" 'calc-not-equal-to
+   "M-%" 'calc-poly-rem
+   "M-&" 'calc-logical-and
+   "M-*" 'calc-product
+   "M-+" 'calc-summation
+   "M--" 'calc-alt-summation
+   "M-." 'calc-remove-equal
+   "M-/" 'calc-poly-div-rem
+   "M-:" 'calc-logical-if
+   "M-<" 'calc-less-than
+   "M-=" 'calc-equal-to
+   "M->" 'calc-greater-than
+   "M-?" 'calc-a-prefix-help
+   "M-A" 'calc-abs
+   "M-F" 'calc-curve-fit
+   "M-I" 'calc-num-integral
+   "M-M" 'calc-map-equation
+   "M-N" 'calc-find-minimum
+   "M-P" 'calc-poly-roots
+   "M-R" 'calc-find-root
+   "M-S" 'calc-solve-for
+   "M-T" 'calc-tabulate
+   "M-X" 'calc-find-maximum
+   "M-[" 'calc-less-equal
+   "M-\\" 'calc-poly-div
+   "M-]" 'calc-greater-equal
+   "M-_" 'calc-subscript
+   "M-a" 'calc-apart
+   "M-b" 'calc-substitute
+   "M-c" 'calc-collect
+   "M-d" 'calc-derivative
+   "M-e" 'calc-simplify-extended
+   "M-f" 'calc-factor
+   "M-g" 'calc-poly-gcd
+   "M-i" 'calc-integral
+   "M-m" 'calc-match
+   "M-n" 'calc-normalize-rat
+   "M-p" 'calc-poly-interp
+   "M-r" 'calc-rewrite
+   "M-s" 'calc-simplify
+   "M-t" 'calc-taylor
+   "M-v" 'calc-alg-evaluate
+   "M-x" 'calc-expand
+   "M-{" 'calc-in-set
+   "M-|" 'calc-logical-or)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "b"
+   "#" 'calc-fin-nper
+   "%" 'calc-percent-change
+   "?" 'calc-b-prefix-help
+   "B" 'calc-log
+   "D" 'calc-fin-ddb
+   "F" 'calc-fin-fv
+   "I" 'calc-fin-irr
+   "L" 'calc-lshift-arith
+   "M" 'calc-fin-pmt
+   "N" 'calc-fin-npv
+   "P" 'calc-fin-pv
+   "R" 'calc-rshift-arith
+   "S" 'calc-fin-sln
+   "T" 'calc-fin-rate
+   "Y" 'calc-fin-syd
+   "a" 'calc-and
+   "c" 'calc-clip
+   "d" 'calc-diff
+   "l" 'calc-lshift-binary
+   "n" 'calc-not
+   "o" 'calc-or
+   "p" 'calc-pack-bits
+   "r" 'calc-rshift-binary
+   "t" 'calc-rotate-binary
+   "u" 'calc-unpack-bits
+   "w" 'calc-word-size
+   "x" 'calc-xor
+   )
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "c"
+   "M-%" 'calc-convert-percent
+   "M-0" 'calc-clean-num
+   "M-1" 'calc-clean-num
+   "M-2" 'calc-clean-num
+   "M-3" 'calc-clean-num
+   "M-4" 'calc-clean-num
+   "M-5" 'calc-clean-num
+   "M-6" 'calc-clean-num
+   "M-7" 'calc-clean-num
+   "M-8" 'calc-clean-num
+   "M-9" 'calc-clean-num
+   "M-?" 'calc-c-prefix-help
+   "M-C" 'calc-cos
+   "M-F" 'calc-fraction
+   "M-c" 'calc-clean
+   "M-d" 'calc-to-degrees
+   "M-f" 'calc-float
+   "M-h" 'calc-to-hms
+   "M-p" 'calc-polar
+   "M-r" 'calc-to-radians)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "b"
+   "\""            'calc-display-strings
+   "'"             'calc-display-raw
+   ","             'calc-group-char
+   "."             'calc-point-char
+   "0"             'calc-decimal-radix
+   "2"             'calc-binary-radix
+   "6"             'calc-hex-radix
+   "8"             'calc-octal-radix
+   "<"             'calc-left-justify
+   "="             'calc-center-justify
+   ">"             'calc-right-justify
+   "?"             'calc-d-prefix-help
+   "@"             'calc-toggle-banner
+   "A"             'calc-giac-language
+   "B"             'calc-big-language
+   "C"             'calc-c-language
+   "D"             'calc-redo
+   "E"             'calc-eqn-language
+   "F"             'calc-fortran-language
+   "L"             'calc-latex-language
+   "M"             'calc-mathematica-language
+   "N"             'calc-normal-language
+   "O"             'calc-flat-language
+   "P"             'calc-pascal-language
+   "T"             'calc-tex-language
+   "U"             'calc-unformatted-language
+   "W"             'calc-maple-language
+   "X"             'calc-maxima-language
+   "Y"             'calc-yacas-language
+   "["             'calc-truncate-up
+   "]"             'calc-truncate-down
+   "b"             'calc-line-breaking
+   "c"             'calc-complex-notation
+   "d"             'calc-date-notation
+   "e"             'calc-eng-notation
+   "f"             'calc-fix-notation
+   "g"             'calc-group-digits
+   "h"             'calc-hms-notation
+   "i"             'calc-i-notation
+   "j"             'calc-j-notation
+   "l"             'calc-line-numbering
+   "n"             'calc-normal-notation
+   "o"             'calc-over-notation
+   "p"             'calc-show-plain
+   "r"             'calc-radix
+   "s"             'calc-sci-notation
+   "t"             'calc-truncate-stack
+   "w"             'calc-auto-why
+   "z"             'calc-leading-zeros
+   "{"             'calc-left-label
+   "}"             'calc-right-label)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "f"
+   "M-?" 'calc-f-prefix-help
+   "M-A" 'calc-abssqr
+   "M-B" 'calc-inc-beta
+   "M-E" 'calc-expm1
+   "M-F" 'calc-floor
+   "M-G" 'calc-inc-gamma
+   "M-I" 'calc-ilog
+   "M-L" 'calc-lnp1
+   "M-M" 'calc-mant-part
+   "M-Q" 'calc-isqrt
+   "M-S" 'calc-scale-float
+   "M-T" 'calc-arctan2
+   "M-X" 'calc-xpon-part
+   "M-[" 'calc-decrement
+   "M-]" 'calc-increment
+   "M-b" 'calc-beta
+   "M-e" 'calc-erf
+   "M-g" 'calc-gamma
+   "M-h" 'calc-hypot
+   "M-i" 'calc-im
+   "M-j" 'calc-bessel-J
+   "M-n" 'calc-min
+   "M-r" 'calc-re
+   "M-s" 'calc-sign
+   "M-x" 'calc-max
+   "M-y" 'calc-bessel-Y)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "g"
+   "C-M-l" 'calc-graph-log-z
+   "C-M-r" 'calc-graph-range-z
+   "C-M-t" 'calc-graph-title-z
+   "M-?" 'calc-g-prefix-help
+   "M-A" 'calc-graph-add-3d
+   "M-C" 'calc-graph-command
+   "M-D" 'calc-graph-device
+   "M-F" 'calc-graph-fast-3d
+   "M-G" 'calc-argument
+   "M-H" 'calc-graph-hide
+   "M-K" 'calc-graph-kill
+   "M-L" 'calc-graph-log-y
+   "M-N" 'calc-graph-num-points
+   "M-O" 'calc-graph-output
+   "M-P" 'calc-graph-print
+   "M-R" 'calc-graph-range-y
+   "M-S" 'calc-graph-point-style
+   "M-T" 'calc-graph-title-y
+   "M-V" 'calc-graph-view-trail
+   "M-X" 'calc-graph-geometry
+   "M-Z" 'calc-graph-zero-y
+   "M-a" 'calc-graph-add
+   "M-b" 'calc-graph-border
+   "M-c" 'calc-graph-clear
+   "M-d" 'calc-graph-delete
+   "M-f" 'calc-graph-fast
+   "M-g" 'calc-graph-grid
+   "M-h" 'calc-graph-header
+   "M-j" 'calc-graph-juggle
+   "M-k" 'calc-graph-key
+   "M-l" 'calc-graph-log-x
+   "M-n" 'calc-graph-name
+   "M-p" 'calc-graph-plot
+   "M-q" 'calc-graph-quit
+   "M-r" 'calc-graph-range-x
+   "M-s" 'calc-graph-line-style
+   "M-t" 'calc-graph-title-x
+   "M-v" 'calc-graph-view-commands
+   "M-x" 'calc-graph-display
+   "M-z" 'calc-graph-zero-x)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "zj"
+   "C-M-h" 'calc-del-selection
+   "C-M-j" 'calc-copy-selection
+   "M-RET" 'calc-copy-selection
+   "M-\"" 'calc-sel-expand-formula
+   "M-&" 'calc-sel-invert
+   "M-'" 'calc-enter-selection
+   "M-*" 'calc-sel-mult-both-sides
+   "M-+" 'calc-sel-add-both-sides
+   "M--" 'calc-sel-sub-both-sides
+   "M-/" 'calc-sel-div-both-sides
+   "M-0" 'calc-select-part
+   "M-1" 'calc-select-part
+   "M-2" 'calc-select-part
+   "M-3" 'calc-select-part
+   "M-4" 'calc-select-part
+   "M-5" 'calc-select-part
+   "M-6" 'calc-select-part
+   "M-7" 'calc-select-part
+   "M-8" 'calc-select-part
+   "M-9" 'calc-select-part
+   "M-?" 'calc-j-prefix-help
+   "M-C" 'calc-sel-commute
+   "M-D" 'calc-sel-distribute
+   "M-E" 'calc-sel-jump-equals
+   "M-I" 'calc-sel-isolate
+   "M-J" 'calc-conj
+   "M-L" 'calc-commute-left
+   "M-M" 'calc-sel-merge
+   "M-N" 'calc-sel-negate
+   "M-O" 'calc-select-once-maybe
+   "M-R" 'calc-commute-right
+   "M-S" 'calc-select-here-maybe
+   "M-U" 'calc-sel-unpack
+   "M-`" 'calc-edit-selection
+   "M-a" 'calc-select-additional
+   "M-b" 'calc-break-selections
+   "M-c" 'calc-clear-selections
+   "M-d" 'calc-show-selections
+   "M-e" 'calc-enable-selections
+   "M-l" 'calc-select-less
+   "M-m" 'calc-select-more
+   "M-n" 'calc-select-next
+   "M-o" 'calc-select-once
+   "M-p" 'calc-select-previous
+   "M-r" 'calc-rewrite-selection
+   "M-s" 'calc-select-here
+   "M-u" 'calc-unselect
+   "M-v" 'calc-sel-evaluate
+   "M-DEL" 'calc-del-selection)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "zk"
+   "M-?" 'calc-k-prefix-help
+   "M-B" 'calc-utpb
+   "M-C" 'calc-utpc
+   "M-E" 'calc-extended-gcd
+   "M-F" 'calc-utpf
+   "M-K" 'calc-keep-args
+   "M-N" 'calc-utpn
+   "M-P" 'calc-utpp
+   "M-T" 'calc-utpt
+   "M-a" 'calc-random-again
+   "M-b" 'calc-bernoulli-number
+   "M-c" 'calc-choose
+   "M-d" 'calc-double-factorial
+   "M-e" 'calc-euler-number
+   "M-f" 'calc-prime-factors
+   "M-g" 'calc-gcd
+   "M-h" 'calc-shuffle
+   "M-l" 'calc-lcm
+   "M-m" 'calc-moebius
+   "M-n" 'calc-next-prime
+   "M-p" 'calc-prime-test
+   "M-r" 'calc-random
+   "M-s" 'calc-stirling-number
+   "M-t" 'calc-totient)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "zl"
+   "*" 'calc-lu-times
+   "+" 'calc-lu-plus
+   "-" 'calc-lu-minus
+   "/" 'calc-lu-divide
+   "?" 'calc-l-prefix-help
+   "d" 'calc-db
+   "f" 'calc-freq
+   "m" 'calc-midi
+   "n" 'calc-np
+   "q" 'calc-lu-quant
+   "s" 'calc-spn)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "m"
+   "?" 'calc-m-prefix-help
+   "A" 'calc-alg-simplify-mode
+   "B" 'calc-bin-simplify-mode
+   "C" 'calc-auto-recompute
+   "D" 'calc-default-simplify-mode
+   "E" 'calc-ext-simplify-mode
+   "F" 'calc-settings-file-name
+   "I" 'calc-basic-simplify-mode
+   "M" 'calc-more-recursion-depth
+   "N" 'calc-num-simplify-mode
+   "O" 'calc-no-simplify-mode
+   "R" 'calc-mode-record-mode
+   "S" 'calc-shift-prefix
+   "U" 'calc-units-simplify-mode
+   "X" 'calc-load-everything
+   "a" 'calc-algebraic-mode
+   "d" 'calc-degrees-mode
+   "e" 'calc-embedded-preserve-modes
+   "f" 'calc-frac-mode
+   "g" 'calc-get-modes
+   "h" 'calc-hms-mode
+   "i" 'calc-infinite-mode
+   "m" 'calc-save-modes
+   "p" 'calc-polar-mode
+   "r" 'calc-radians-mode
+   "s" 'calc-symbolic-mode
+   "t" 'calc-total-algebraic-mode
+   "v" 'calc-matrix-mode
+   "w" 'calc-working
+   "x" 'calc-always-load-extensions)
+
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "r"
+   "M-0" 'calc-recall-quick
+   "M-1" 'calc-recall-quick
+   "M-2" 'calc-recall-quick
+   "M-3" 'calc-recall-quick
+   "M-4" 'calc-recall-quick
+   "M-5" 'calc-recall-quick
+   "M-6" 'calc-recall-quick
+   "M-7" 'calc-recall-quick
+   "M-8" 'calc-recall-quick
+   "M-9" 'calc-recall-quick
+   "M-?" 'calc-r-prefix-help
+   "M-i" 'calc-insert-register
+   "M-s" 'calc-copy-to-register)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "s"
+   "&" 'calc-store-inv
+   "*" 'calc-store-times
+   "+" 'calc-store-plus
+   "-" 'calc-store-minus
+   "/" 'calc-store-div
+   "0" 'calc-store-quick
+   "1" 'calc-store-quick
+   "2" 'calc-store-quick
+   "3" 'calc-store-quick
+   "4" 'calc-store-quick
+   "5" 'calc-store-quick
+   "6" 'calc-store-quick
+   "7" 'calc-store-quick
+   "8" 'calc-store-quick
+   "9" 'calc-store-quick
+   ":" 'calc-assign
+   "=" 'calc-evalto
+   "?" 'calc-s-prefix-help
+   "A" 'calc-edit-AlgSimpRules
+   "D" 'calc-edit-Decls
+   "E" 'calc-edit-EvalRules
+   "F" 'calc-edit-FitRules
+   "G" 'calc-edit-GenCount
+   "H" 'calc-edit-Holidays
+   "I" 'calc-edit-IntegLimit
+   "L" 'calc-edit-LineStyles
+   "P" 'calc-edit-PointStyles
+   "R" 'calc-edit-PlotRejects
+   "S" 'calc-sin
+   "T" 'calc-edit-TimeZone
+   "U" 'calc-edit-Units
+   "X" 'calc-edit-ExtSimpRules
+   "[" 'calc-store-decr
+   "]" 'calc-store-incr
+   "^" 'calc-store-power
+   "c" 'calc-copy-variable
+   "d" 'calc-declare-variable
+   "e" 'calc-edit-variable
+   "i" 'calc-insert-variables
+   "k" 'calc-copy-special-constant
+   "l" 'calc-let
+   "m" 'calc-store-map
+   "n" 'calc-store-neg
+   "p" 'calc-permanent-variable
+   "r" 'calc-recall
+   "s" 'calc-store
+   "t" 'calc-store-into
+   "u" 'calc-unstore
+   "x" 'calc-store-exchange
+   "|" 'calc-store-concat)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "t"
+   "M-+" 'calc-business-days-plus
+   "M--" 'calc-business-days-minus
+   "M-." 'calc-full-trail-vectors
+   "M-0" 'calc-store-into-quick
+   "M-1" 'calc-store-into-quick
+   "M-2" 'calc-store-into-quick
+   "M-3" 'calc-store-into-quick
+   "M-4" 'calc-store-into-quick
+   "M-5" 'calc-store-into-quick
+   "M-6" 'calc-store-into-quick
+   "M-7" 'calc-store-into-quick
+   "M-8" 'calc-store-into-quick
+   "M-9" 'calc-store-into-quick
+   "M-<" 'calc-trail-scroll-left
+   "M->" 'calc-trail-scroll-right
+   "M-?" 'calc-t-prefix-help
+   "M-C" 'calc-convert-time-zones
+   "M-D" 'calc-date
+   "M-I" 'calc-inc-month
+   "M-J" 'calc-julian
+   "M-M" 'calc-new-month
+   "M-N" 'calc-now
+   "M-P" 'calc-date-part
+   "M-T" 'calc-tan
+   "M-U" 'calc-unix-time
+   "M-W" 'calc-new-week
+   "M-Y" 'calc-new-year
+   "M-Z" 'calc-time-zone
+   "M-[" 'calc-trail-first
+   "M-]" 'calc-trail-last
+   "M-b" 'calc-trail-backward
+   "M-d" 'calc-trail-display
+   "M-f" 'calc-trail-forward
+   "M-h" 'calc-trail-here
+   "M-i" 'calc-trail-in
+   "M-k" 'calc-trail-kill
+   "M-m" 'calc-trail-marker
+   "M-n" 'calc-trail-next
+   "M-o" 'calc-trail-out
+   "M-p" 'calc-trail-previous
+   "M-r" 'calc-trail-isearch-backward
+   "M-s" 'calc-trail-isearch-forward
+   "M-y" 'calc-trail-yank
+   "M-{" 'calc-trail-backward
+   "M-}" 'calc-trail-forward)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "U"
+   "M-#" 'calc-vector-count
+   "M-*" 'calc-vector-product
+   "M-+" 'calc-vector-sum
+   "M-0" 'calc-quick-units
+   "M-1" 'calc-quick-units
+   "M-2" 'calc-quick-units
+   "M-3" 'calc-quick-units
+   "M-4" 'calc-quick-units
+   "M-5" 'calc-quick-units
+   "M-6" 'calc-quick-units
+   "M-7" 'calc-quick-units
+   "M-8" 'calc-quick-units
+   "M-9" 'calc-quick-units
+   "M-?" 'calc-u-prefix-help
+   "M-C" 'calc-vector-covariance
+   "M-G" 'calc-vector-geometric-mean
+   "M-M" 'calc-vector-mean
+   "M-N" 'calc-vector-min
+   "M-R" 'calc-vector-rms
+   "M-S" 'calc-vector-sdev
+   "M-U" 'calc-undo
+   "M-V" 'calc-view-units-table
+   "M-X" 'calc-vector-max
+   "M-a" 'calc-autorange-units
+   "M-b" 'calc-base-units
+   "M-c" 'calc-convert-units
+   "M-d" 'calc-define-unit
+   "M-e" 'calc-explain-units
+   "M-g" 'calc-get-unit-definition
+   "M-n" 'calc-convert-exact-units
+   "M-p" 'calc-permanent-units
+   "M-r" 'calc-remove-units
+   "M-s" 'calc-simplify-units
+   "M-t" 'calc-convert-temperature
+   "M-u" 'calc-undefine-unit
+   "M-v" 'calc-enter-units-table
+   "M-x" 'calc-extract-units)
+
+  (:keymaps '(calc-mode-map)
+   :states '(normal visual)
+   :prefix "v"
+   "#" 'calc-set-cardinality
+   "&" 'calc-inv
+   "(" 'calc-vector-parens
+   ")" 'calc-matrix-brackets
+   "+" 'calc-remove-duplicates
+   "," 'calc-vector-commas
+   "-" 'calc-set-difference
+   "." 'calc-full-vectors
+   "/" 'calc-break-vectors
+   ":" 'calc-set-span
+   "<" 'calc-matrix-left-justify
+   "=" 'calc-matrix-center-justify
+   ">" 'calc-matrix-right-justify
+   "?" 'calc-v-prefix-help
+   "A" 'calc-apply
+   "C" 'calc-cross
+   "D" 'calc-mdet
+   "E" 'calc-set-enumerate
+   "F" 'calc-set-floor
+   "G" 'calc-grade
+   "H" 'calc-histogram
+   "I" 'calc-inner-product
+   "J" 'calc-conj-transpose
+   "K" 'calc-kron
+   "L" 'calc-mlud
+   "M" 'calc-map
+   "N" 'calc-cnorm
+   "O" 'calc-outer-product
+   "R" 'calc-reduce
+   "S" 'calc-sort
+   "T" 'calc-mtrace
+   "U" 'calc-accumulate
+   "V" 'calc-set-union
+   "X" 'calc-set-xor
+   "[" 'calc-vector-brackets
+   "]" 'calc-matrix-brackets
+   "^" 'calc-set-intersect
+   "a" 'calc-arrange-vector
+   "b" 'calc-build-vector
+   "c" 'calc-mcol
+   "d" 'calc-diag
+   "e" 'calc-expand-vector
+   "f" 'calc-vector-find
+   "h" 'calc-head
+   "i" 'calc-ident
+   "k" 'calc-cons
+   "l" 'calc-vlength
+   "m" 'calc-mask-vector
+   "n" 'calc-rnorm
+   "p" 'calc-pack
+   "r" 'calc-mrow
+   "s" 'calc-subvector
+   "t" 'calc-transpose
+   "u" 'calc-unpack
+   "v" 'calc-reverse-vector
+   "x" 'calc-index
+   "{" 'calc-vector-braces
+   "}" 'calc-matrix-brackets
+   "~" 'calc-set-complement)
+
+  ;; "zz" (lookup-key calc-mode-map (kbd "z"))
+
+  (:keymaps '(calc-mode-map)
+   :states '(visual)
+   "d" 'calc-kill-region))
 
 (use-package openwith
   :ensure t
@@ -3221,7 +3981,7 @@ function to return a regular expression, or
 
                     "\\|" "\\(![=~]?[#?]?\\)"
                     "\\|" "\\(>[#\\\\?=]?[#?]?\\)"
-                    "\\|" "\\(<[#\\\\?=]?[#?]?\\)" 
+                    "\\|" "\\(<[#\\\\?=]?[#?]?\\)"
                     "\\|" "\\(\\+=?\\)"
                     "\\|" "\\(-=?\\)"
                     "\\|" "\\(=[=~]?[#?]?\\)"
