@@ -1163,6 +1163,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
    "C-n" 'company-select-next
    "C-p" 'company-select-previous))
 
+(use-package company-box
+  :disabled
+  :ensure t
+  :hook (company-mode . company-box-mode))
+
 ;;;; Linting
 
 (use-package flycheck
