@@ -440,8 +440,7 @@ _l_: Move right  _L_: Move window right _+_: Increase height
                           (?\u0100 . ?\u017F) ; Latin Extended-A
                           (?\u0180 . ?\u024F) ; Latin Extended-B
                           (?\u0250 . ?\u02AF) ; IPA Extensions
-                          (?\u0370 . ?\u03FF) ; Greek and Coptic
-                          ?\u0183)) ;Whitespace-mode ·
+                          (?\u0370 . ?\u03FF))) ; Greek and Coptic
             (ja-font-spec (font-spec :family ja-font-family))
             (ja-characters '(katakana-jisx0201
                              cp932-2-byte
@@ -1507,6 +1506,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
     (call-interactively 'push-button)
     (run-with-timer 0.01 nil 'eab/push-button-on-file-same-window-internal))
   )
+
+(use-package whitespace
+  :ensure nil
+  :config
+  (when *is-win*
+    (set-face-attribute 'whitespace-space nil :family "ＭＳ ゴシック")))
 
 (use-package calc
   :ensure nil
