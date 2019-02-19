@@ -328,6 +328,8 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 ;; Disable bidi-display
 (setq-default bidi-display-reordering nil)
 
+;; Respect fontset settings for symbols
+(setq use-default-font-for-symbols nil)
 ;; Time locale setting
 ;; Set to "C" for English time locale
 (setq system-time-locale "C")
@@ -396,6 +398,62 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 
 ;;;; Font settings
 
+;; (defvar default-font-family nil
+;;   "Font to be used for English characters")
+
+;; (defvar ja-default-font-family nil
+;;   "Font to be used for Japanese characters")
+
+;; (defvar default-font-size nil
+;;   "Default font size")
+
+;; (defvar ja-default-font-rescale nil
+;;   "Rescaling value for Japanese characters")
+
+;; ;; TODO: Introduce a variable for font-family to be used
+;; ;; for the display of special characters.
+;; ;; Current settings works for mac, but the font I use for
+;; ;; windows has the whitespace-mode's ?\u0183 as double width.
+
+;; (cond (*is-win*
+;;        (setq default-font-family "Myrica M")
+;;        (setq default-font-size 10)
+;;        (setq ja-default-font-family default-font-family)
+;;        (setq ja-default-font-rescale 1.0))
+;;       (*is-mac*
+;;        (progn
+;;          (setq default-font-family "Operator Mono SSm")
+;;          (setq default-font-size 11)
+;;          (setq ja-default-font-family "Ricty Discord")
+;;          (setq ja-default-font-rescale 1.3))))
+
+;; (defun set-font (&optional frame)
+;;   (when frame
+;;     (select-frame frame))
+;;   (when (display-graphic-p)
+;;     (let* ((font-family default-font-family)
+;;            (font-size default-font-size)
+;;            (font-height (* font-size 10))
+;;            (ja-font-family ja-default-font-family))
+;;       (set-face-attribute 'default nil :family font-family :height font-height)
+;;       (let ((name (frame-parameter nil 'font))
+;;             (font-spec (font-spec :family font-family))
+;;             (characters '((?\u00A0 . ?\u00FF) ; Latin-1
+;;                           (?\u0100 . ?\u017F) ; Latin Extended-A
+;;                           (?\u0180 . ?\u024F) ; Latin Extended-B
+;;                           (?\u0250 . ?\u02AF) ; IPA Extensions
+;;                           (?\u0370 . ?\u03FF))) ; Greek and Coptic
+;;             (ja-font-spec (font-spec :family ja-font-family))
+;;             (ja-characters '(katakana-jisx0201
+;;                              cp932-2-byte
+;;                              japanese-jisx0212
+;;                              japanese-jisx0213-2
+;;                              japanese-jisx0213.2004-1)))
+;;         (dolist (ja-character ja-characters)
+;;           (set-fontset-font name ja-character ja-font-spec))
+;;         (dolist (character characters)
+;;           (set-fontset-font name character font-spec))
+;;         (add-to-list 'face-font-rescale-alist (cons ja-font-family ja-default-font-rescale))))))
 (defvar default-font-family nil
   "Font to be used for English characters")
 
@@ -411,19 +469,22 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 ;; TODO: Introduce a variable for font-family to be used
 ;; for the display of special characters.
 ;; Current settings works for mac, but the font I use for
-;; windows has the whitespace-mode's ?\u0183 as double width.
+;; windows has the whitespace-mode's ?\u00B7 as double width.
 
 (cond (*is-win*
        (setq default-font-family "Myrica M")
        (setq default-font-size 10)
        (setq ja-default-font-family default-font-family)
-       (setq ja-default-font-rescale 1.0))
+       (setq ja-default-font-rescale 1.0)
+       (setq symbol-default-font-family "Courier New")
+       (setq symbol-default-font-rescale 0.9))
       (*is-mac*
-       (progn
-         (setq default-font-family "Operator Mono SSm")
-         (setq default-font-size 11)
-         (setq ja-default-font-family "Ricty Discord")
-         (setq ja-default-font-rescale 1.3))))
+       (setq default-font-family "Operator Mono SSm")
+       (setq default-font-size 11)
+       (setq ja-default-font-family "Ricty Discord")
+       (setq ja-default-font-rescale 1.3)
+       (setq symbol-default-font-family default-font-family)
+       (setq symbol-default-font-rescale 1.0)))
 
 (defun set-font (&optional frame)
   (when frame
@@ -432,7 +493,8 @@ _l_: Move right  _L_: Move window right _+_: Increase height
     (let* ((font-family default-font-family)
            (font-size default-font-size)
            (font-height (* font-size 10))
-           (ja-font-family ja-default-font-family))
+           (ja-font-family ja-default-font-family)
+           (symbol-font-family symbol-default-font-family))
       (set-face-attribute 'default nil :family font-family :height font-height)
       (let ((name (frame-parameter nil 'font))
             (font-spec (font-spec :family font-family))
@@ -446,12 +508,20 @@ _l_: Move right  _L_: Move window right _+_: Increase height
                              cp932-2-byte
                              japanese-jisx0212
                              japanese-jisx0213-2
-                             japanese-jisx0213.2004-1)))
+                             japanese-jisx0213.2004-1))
+            (symbol-font-spec (font-spec :family symbol-font-family))
+            (symbol-characters '(?\u00B7)))
         (dolist (ja-character ja-characters)
           (set-fontset-font name ja-character ja-font-spec))
         (dolist (character characters)
           (set-fontset-font name character font-spec))
-        (add-to-list 'face-font-rescale-alist (cons ja-font-family ja-default-font-rescale))))))
+        (dolist (symbol-character symbol-characters)
+          (set-fontset-font name symbol-character symbol-font-spec))
+        (add-to-list 'face-font-rescale-alist
+                     (cons ja-font-family ja-default-font-rescale))
+        (add-to-list 'face-font-rescale-alist
+                     (cons symbol-font-family symbol-default-font-rescale))
+        ))))
 (add-hook 'after-init-hook #'set-font)
 (add-hook 'after-make-frame-functions #'set-font)
 
@@ -1515,8 +1585,11 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package whitespace
   :ensure nil
   :config
-  (when *is-win*
-    (set-face-attribute 'whitespace-space nil :family "ＭＳ ゴシック")))
+  ;; (when *is-win*
+  ;;   ;; (set-face-attribute 'whitespace-space nil :family "ＭＳ ゴシック")
+  ;;   (setf (alist-get 'space-mark whitespace-display-mappings
+  ;;                    nil nil #'equal) '(?\  [?.] [?.])))
+  )
 
 (use-package calc
   :ensure nil
