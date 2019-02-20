@@ -1237,6 +1237,12 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure t
   :hook (company-mode . company-box-mode))
 
+(use-package company-posframe
+  :disabled
+  :ensure t
+  :config
+  (company-posframe-mode 1))
+
 ;;;; Linting
 
 (use-package flycheck

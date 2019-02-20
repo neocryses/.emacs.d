@@ -1,0 +1,2 @@
+;;; -*- no-byte-compile: t -*-
+(define-package "vdiff" "20190218.244" "A diff tool similar to  vimdiff" '((emacs "24.4") (hydra "0.13.0")) :stars '(#("115" 0 3 (font-lock-face paradox-star-face))) :commit "f2a622f46e7a84389972b86c8dbc778a6d890ddf" :keywords '("diff") :authors '(("Justin Burkett" . "justin@burkett.cc")) :maintainer '("Justin Burkett" . "justin@burkett.cc") :url "https://github.com/justbur/emacs-vdiff")
