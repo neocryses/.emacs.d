@@ -1511,7 +1511,9 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package magit
   :ensure t
   :config
-  (setq magit-refresh-status-buffer nil)
+  (setq magit-refresh-status-buffer nil
+        magit-commit-show-diff nil
+        magit-revert-buffers 1)
   :general
   (:states '(normal visual)
    :prefix global-leader
