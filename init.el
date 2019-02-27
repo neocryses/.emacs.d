@@ -1401,9 +1401,9 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package helm-gtags
   :ensure t
+  :defer .3
   :config
   (when *is-win*
-
     (defun helm-gtags--exec-global-command-fix (orig-fun &rest args)
       "Fix the handling of the coding for external commands"
       (let ((buffer-file-coding-system 'cp932-dos))
@@ -2782,6 +2782,8 @@ Lisp function does not specify a special indentation."
 
 (use-package org-download
   :ensure t
+  :defer
+  :hook ((org-mode . org-download-enable))
   :config
   (setq-default org-download-image-dir "~/org/pictures"))
 
