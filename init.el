@@ -588,6 +588,7 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 
 (use-package highlight-indent-guides
   :ensure t
+  :defer .3
   :config
   (setq highlight-indent-guides-method 'character))
 
@@ -597,7 +598,7 @@ _l_: Move right  _L_: Move window right _+_: Increase height
 
 (use-package evil
   :ensure t
-  :demand
+  :defer .3
   :init
   (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
@@ -767,6 +768,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package evil-matchit
   :ensure t
+  :defer .3
   :config
   (global-evil-matchit-mode 1))
 
@@ -774,13 +776,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package evil-collection
   :after evil
   :ensure t
-  :demand
+  :defer .3
   :config
   (evil-collection-init '(simple calendar comint custom ediff occur xref simple term)))
 
 (use-package evil-goggles
   :ensure t
   :delight evil-goggles-mode
+  :defer .3
   :config
   (add-to-list 'evil-goggles--commands '(lispyville-yank :face evil-goggles-yank-face :switch evil-goggles-enable-yank :advice evil-goggles--generic-async-advice))
   (add-to-list 'evil-goggles--commands '(lispyville-change :face evil-goggles-change-face :switch evil-goggles-enable-change :advice evil-goggles--generic-blocking-advice))
@@ -796,13 +799,14 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 (use-package evil-indent-plus
   :after evil
   :ensure t
+  :defer .3
   :config
   (evil-indent-plus-default-bindings))
 
 (use-package evil-surround
   :after evil
   :ensure t
-  :demand t
+  :defer .3
   :config
   (add-to-list 'evil-surround-operator-alist
                '(lispyville-change . change))
@@ -818,7 +822,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   :ensure t)
 
 (use-package evil-textobj-line
-  :ensure t)
+  :ensure t
+  :defer .3)
 
 (use-package evil-visualstar
   :ensure t
@@ -1591,6 +1596,7 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
 
 (use-package whitespace
   :ensure nil
+  :defer .3
   :config
   ;; (when *is-win*
   ;;   ;; (set-face-attribute 'whitespace-space nil :family "ＭＳ ゴシック")
@@ -2929,7 +2935,8 @@ function to return a regular expression, or
 ;;;; SQL
 
 (use-package sql-indent
-  :ensure t)
+  :ensure t
+  :defer .3)
 
 ;;;; Fish
 
