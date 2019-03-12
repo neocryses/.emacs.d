@@ -2869,6 +2869,8 @@ function to return a regular expression, or
 
 (use-package helm-org-rifle
   :ensure t
+  :config
+  (setq helm-org-rifle-close-unopened-file-buffers nil)
   :general
   (:states '(normal visual)
    :prefix global-leader
@@ -2923,6 +2925,11 @@ function to return a regular expression, or
   :mode (("\\`README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode)))
+
+;;;; SQL
+
+(use-package sql-indent
+  :ensure t)
 
 ;;;; Fish
 
